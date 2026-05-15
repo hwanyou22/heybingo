@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="오늘의 빙고">
@@ -18,7 +18,7 @@ button{font-family:inherit}
 .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px}
 .bp{background:#16a34a;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-weight:500;cursor:pointer;font-size:14px}
 .bg{background:none;border:1px solid #e5e7eb;border-radius:8px;padding:9px 14px;cursor:pointer;color:#6b7280;font-size:13px}
-.board{display:grid;gap:3px}
+.board{display:grid;gap:3px;transform-origin:top center;transition:transform .2s}
 .cell{aspect-ratio:1;border-radius:7px;overflow:hidden;cursor:pointer;position:relative;background:#fff;border:1px solid #e5e7eb;user-select:none;-webkit-user-select:none}
 .cell.bingo{outline:2.5px solid #16a34a;background:#bbf7d0}
 .tag{display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:20px;padding:3px 8px 3px 4px;font-size:12px;margin:3px}
@@ -28,7 +28,7 @@ button{font-family:inherit}
 <div id="app"></div>
 <input type="file" id="fi" accept="image/*" style="display:none">
 <script>
-const KC='bingo_cfg_v4', KB='bingo_brd_v4';
+const KC='bingo_cfg_v5', KB='bingo_brd_v5';
 
 const DP=[{id:'daily',name:'오늘의 빙고',items:[
   {id:'r1',label:'내가 가장 행복할 때의 얼굴',req:true},
@@ -89,6 +89,7 @@ let S={
   pw:'admin1234',
   editPid:null, loginErr:'', pwMsg:'',
   selCell:null, dlding:false,
+  zoom:1,
 };
 
 function lg(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch{return null;}}
@@ -112,7 +113,7 @@ async function cimg(file,mx=500){return new Promise(r=>{
 function bgs(board,sz){
   const ok=i=>!!board[i]?.photo,r=[];
   for(let i=0;i<sz;i++){const row=Array.from({length:sz},(_,c)=>i*sz+c);if(row.every(ok))r.push(row);}
-  for(let c=0;c<sz;c++){const col=Array.from({length:sz},(_,i)=>i*sz+c);if(col.every(ok))r.push(col);}
+  for(let c=0;c<sz;c++){const col=Array.from({length:sz},(_,r2)=>r2*sz+c);if(col.every(ok))r.push(col);}
   const d1=Array.from({length:sz},(_,i)=>i*sz+i),d2=Array.from({length:sz},(_,i)=>i*sz+(sz-1-i));
   if(d1.every(ok))r.push(d1);if(d2.every(ok))r.push(d2);return r;
 }
@@ -124,19 +125,7 @@ function rr(ctx,x,y,w,h,r){
   ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
 }
 
-function isAdj(a,b,sz){
-  const ra=0|a/sz,ca=a%sz,rb=0|b/sz,cb=b%sz;
-  return Math.abs(ra-rb)<=1&&Math.abs(ca-cb)<=1;
-}
-function spreadPos(count,sz){
-  const all=Array.from({length:sz*sz},(_,i)=>i);
-  for(let t=0;t<500;t++){
-    const s=shuf(all),chosen=[];
-    for(const pos of s){if(chosen.every(p=>!isAdj(p,pos,sz))){chosen.push(pos);if(chosen.length===count)return chosen;}}
-  }
-  return shuf(all).slice(0,count);
-}
-
+// ── 빙고판 생성 (필수 항상 포함, 위치는 랜덤) ──────────────────────
 function mkBoard(){
   const pool=S.pools.find(p=>p.id===S.poolId);
   if(!pool)return false;
@@ -146,12 +135,7 @@ function mkBoard(){
   if(req.length>need)return false;
   const fill=opt.slice(0,need-req.length);
   if(req.length+fill.length<need)return false;
-  const reqPos=spreadPos(req.length,S.size);
-  const board=new Array(need).fill(null);
-  shuf(req).forEach((it,i)=>{board[reqPos[i]]=it;});
-  const optPos=Array.from({length:need},(_,i)=>i).filter(i=>!reqPos.includes(i));
-  shuf(fill).forEach((it,i)=>{board[optPos[i]]=it;});
-  S.board=board.map(it=>({...it,photo:null}));
+  S.board=shuf([...req,...fill]).map(it=>({...it,photo:null}));
   S.boardSent=false;sbrd();return true;
 }
 
@@ -178,7 +162,7 @@ async function genImg(){
     const rv=0|i/sz,cv2=i%sz,x=P+cv2*(CS+G),y=P+HDR+rv*(CS+G);
     const cell=S.board[i],bin=bs.has(i);
     ctx.save();rr(ctx,x,y,CS,CS,7);
-    ctx.fillStyle=bin?'#bbf7d0':'#fff';ctx.fill();
+    ctx.fillStyle=bin?'#bbf7d0':cell?.req?'rgba(22,163,74,.06)':'#fff';ctx.fill();
     ctx.strokeStyle=bin?'#16a34a':'#d1d5db';ctx.lineWidth=bin?2:1;ctx.stroke();ctx.restore();
     if(imgs[i]){
       const im=imgs[i];
@@ -191,9 +175,8 @@ async function genImg(){
       ctx.fillStyle='#fff';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText(fmt(cell.photo.date),x+CS/2,y+CS-8);
       if(bin){ctx.fillStyle='rgba(34,197,94,.2)';ctx.fillRect(x+3,y+3,CS-6,CS-6);}
     }else{
-      if(cell?.req){ctx.fillStyle='rgba(22,163,74,.1)';rr(ctx,x,y,CS,CS,7);ctx.fill();}
       ctx.fillStyle='#e5e7eb';rr(ctx,x+CS/2-18,y+CS/2-24,36,24,5);ctx.fill();
-      ctx.fillStyle=cell?.req?'#15803d':'#9ca3af';ctx.font='8px sans-serif';ctx.textAlign='center';
+      ctx.fillStyle=cell?.req?'#15803d':'#9ca3af';ctx.font=`bold 9px sans-serif`;ctx.textAlign='center';
       const lbl=cell?.label||'',ws=lbl.split(' '),ln=[''];
       for(const w of ws){const l=ln[ln.length-1];if((l+w).length<=8)ln[ln.length-1]=(l?l+' ':'')+w;else ln.push(w);}
       ln.forEach((l,li)=>ctx.fillText(l,x+CS/2,y+CS/2+6+li*11));
@@ -232,7 +215,6 @@ async function dlMid(){
   }finally{S.dlding=false;render();}
 }
 
-// ── Render ─────────────────────────────────────────────────────────
 function render(){
   const app=document.getElementById('app');
   if(S.screen==='welcome')app.innerHTML=welcomeH();
@@ -254,9 +236,7 @@ function welcomeH(){return`
     <input type="text" id="uname" placeholder="이름을 입력해주세요" value="${esc(S.name)}"
       style="text-align:center;font-size:16px;padding:12px;margin-bottom:1rem"
       onkeydown="if(event.key==='Enter')startBingo()">
-    <button onclick="startBingo()" class="bp" style="width:100%;padding:14px;font-size:16px;border-radius:12px">
-      시작할까요?
-    </button>
+    <button onclick="startBingo()" class="bp" style="width:100%;padding:14px;font-size:16px;border-radius:12px">시작할까요?</button>
   </div>
 </div>`;}
 
@@ -298,7 +278,7 @@ function adminH(){
         </div>
       </div>
       ${exp?`<div style="padding:12px 14px;border-top:1px solid #e5e7eb">
-        <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">버튼으로 필수/선택 전환 · 필수 항목은 서로 떨어져 배치돼요</p>
+        <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">버튼으로 필수/선택 전환 · 필수 항목은 항상 포함돼요</p>
         <div style="display:flex;gap:8px;margin-bottom:.75rem">
           <input type="text" id="ni_${pool.id}" placeholder="새 미션 입력 후 Enter" onkeydown="if(event.key==='Enter')AI('${pool.id}')" style="flex:1;font-size:13px">
           <button class="bp" onclick="AI('${pool.id}')">추가</button>
@@ -339,9 +319,7 @@ function adminH(){
       </div>
       ${S.pwMsg?`<p style="margin:6px 0 0;font-size:12px;color:${S.pwMsg==='변경 완료'?'#16a34a':'#ef4444'}">${esc(S.pwMsg)}</p>`:''}
     </div>
-    <button class="bp" onclick="mkBoard();S.screen='welcome';render()" style="width:100%;padding:13px;font-size:14px;border-radius:12px">
-      ✓ 설정 저장
-    </button>
+    <button class="bp" onclick="mkBoard();S.screen='welcome';render()" style="width:100%;padding:13px;font-size:14px;border-radius:12px">✓ 설정 저장</button>
   </div>`;}
 
 function userH(){
@@ -349,20 +327,30 @@ function userH(){
   const pc=S.board.filter(c=>c?.photo).length,tot=S.board.length;
   const ap=S.pools.find(p=>p.id===S.poolId);
   const isComplete=pc===tot&&tot>0;
+  const z=S.zoom;
+
+  // 줌 적용 시 셀 내 폰트 크기 계산
+  const fsLabel = Math.round(12 * z);
+  const fsDate  = Math.round(7  * z);
+  const fsPhoto = Math.round(8  * z);
 
   const cells=S.board.map((c,i)=>{
     const bin=bs.has(i),has=!!c?.photo;
     if(has)return`<div class="cell${bin?' bingo':''}" onclick="PP(${i})">
       <img src="${c.photo.dataUrl}" alt="${esc(c.label)}" style="width:100%;height:100%;object-fit:cover;display:block">
-      <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.46);padding:2px 4px"><p style="margin:0;color:#fff;font-size:7px;text-align:center;font-weight:500;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.label)}</p></div>
-      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.46);padding:2px 4px"><p style="margin:0;color:#fff;font-size:6px;text-align:center;font-family:monospace;line-height:1.4">${fmt(c.photo.date)}</p></div>
-      <button onclick="RP(event,${i})" style="position:absolute;top:2px;right:2px;width:15px;height:15px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">×</button>
+      <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.46);padding:2px 4px">
+        <p style="margin:0;color:#fff;font-size:${fsPhoto}px;font-weight:600;text-align:center;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.label)}</p>
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.46);padding:2px 4px">
+        <p style="margin:0;color:#fff;font-size:${fsDate}px;text-align:center;font-family:monospace;line-height:1.4">${fmt(c.photo.date)}</p>
+      </div>
+      <button onclick="RP(event,${i})" style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">×</button>
       ${bin?'<div style="position:absolute;inset:0;background:rgba(34,197,94,.15);pointer-events:none"></div>':''}
     </div>`;
     return`<div class="cell${bin?' bingo':''}" onclick="PP(${i})" style="${c?.req?'background:rgba(22,163,74,.06)':''}">
-      <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px;gap:2px">
-        ${c?.req?'<span style="font-size:9px;color:#16a34a">★</span>':''}
-        <p style="margin:0;font-size:8px;color:${c?.req?'#15803d':'#9ca3af'};text-align:center;line-height:1.3;word-break:keep-all">${esc(c?.label||'')}</p>
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;gap:2px">
+        ${c?.req?`<span style="font-size:${Math.round(9*z)}px;color:#16a34a;line-height:1">★</span>`:''}
+        <p style="margin:0;font-size:${fsLabel}px;font-weight:700;color:${c?.req?'#15803d':'#374151'};text-align:center;line-height:1.35;word-break:keep-all">${esc(c?.label||'')}</p>
       </div>
     </div>`;
   }).join('');
@@ -372,20 +360,14 @@ function userH(){
       <div style="margin-top:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:16px;text-align:center">
         <p style="font-size:22px;margin-bottom:8px">✓</p>
         <p style="font-size:14px;color:#15803d;font-weight:500;margin-bottom:12px">전송 완료!</p>
-        <button onclick="newBoard()" class="bp" style="width:100%;padding:12px;font-size:15px;border-radius:10px">
-          새 빙고 시작하기
-        </button>
+        <button onclick="newBoard()" class="bp" style="width:100%;padding:12px;font-size:15px;border-radius:10px">새 빙고 시작하기</button>
       </div>`:`
       <div style="margin-top:12px;background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:16px;text-align:center">
         <p style="font-size:16px;font-weight:500;color:#854d0e;margin-bottom:4px">모든 미션 완료!</p>
         <p style="font-size:12px;color:#92400e;margin-bottom:14px">이미지를 저장하고 관리자에게 전송해주세요<br>전송 후 새 빙고를 시작할 수 있어요</p>
         <div style="display:flex;gap:8px">
-          <button onclick="doShare(false)" ${S.dlding?'disabled':''} style="flex:2;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;opacity:${S.dlding?'0.7':'1'}">
-            ${S.dlding?'처리 중...':'전송하기'}
-          </button>
-          <button onclick="doShare(true)" ${S.dlding?'disabled':''} style="flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:13px;cursor:pointer;color:#6b7280;opacity:${S.dlding?'0.7':'1'}">
-            저장만
-          </button>
+          <button onclick="doShare(false)" ${S.dlding?'disabled':''} style="flex:2;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;opacity:${S.dlding?'0.7':'1'}">${S.dlding?'처리 중...':'전송하기'}</button>
+          <button onclick="doShare(true)" ${S.dlding?'disabled':''} style="flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:13px;cursor:pointer;color:#6b7280;opacity:${S.dlding?'0.7':'1'}">저장만</button>
         </div>
       </div>`)
     :'';
@@ -396,17 +378,31 @@ function userH(){
         <h1 style="font-size:16px;font-weight:500;color:#14532d">${esc(S.name)}님의 빙고</h1>
         <p style="font-size:11px;color:#15803d">${pc}/${tot} 완성 · 빙고 ${bl.length}개</p>
       </div>
-      <div style="display:flex;gap:5px">
+      <div style="display:flex;gap:5px;align-items:center">
         ${pc>0&&!isComplete?`<button onclick="dlMid()" ${S.dlding?'disabled':''} class="bp" style="font-size:12px;padding:6px 11px;opacity:${S.dlding?'0.7':'1'}">${S.dlding?'저장 중...':'저장'}</button>`:''}
         <button onclick="S.screen='login';S.loginErr='';render()" style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#9ca3af">⚙</button>
       </div>
     </div>
+
     ${bl.length>0&&!isComplete?`<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:7px 14px;margin-bottom:.65rem;text-align:center"><span style="font-weight:500;color:#854d0e;font-size:13px">🎉 ${bl.length}빙고 달성!</span></div>`:''}
-    <div class="board" style="grid-template-columns:repeat(${S.size},1fr)">${cells}</div>
+
+    <!-- 확대/축소 버튼 -->
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:6px">
+      <span style="font-size:11px;color:#9ca3af">확대</span>
+      <button onclick="setZoom(${Math.max(.7,z-.15).toFixed(2)})" style="width:30px;height:30px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;font-size:18px;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+      <button onclick="setZoom(${Math.min(2,z+.15).toFixed(2)})" style="width:30px;height:30px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;font-size:18px;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+    </div>
+
+    <div style="overflow:auto">
+      <div class="board" id="bboard" style="grid-template-columns:repeat(${S.size},1fr);transform:scale(${z});transform-origin:top left;width:${z===1?'100%':Math.round(100/z)+'%'}">${cells}</div>
+    </div>
+    <div style="height:${z>1?Math.round((z-1)*300)+'px':'0'}"></div>
+
     ${bottomSection}
   </div>`;}
 
-// ── Actions ────────────────────────────────────────────────────────
+function setZoom(z){S.zoom=parseFloat(z);render();}
+
 function startBingo(){
   const v=document.getElementById('uname')?.value?.trim();
   if(!v){document.getElementById('uname')?.focus();return;}
@@ -426,7 +422,6 @@ function CP(){const v=document.getElementById('npw')?.value?.trim();if(!v||v.len
 function PP(i){S.selCell=i;document.getElementById('fi').click();}
 function RP(ev,i){ev.stopPropagation();S.board[i].photo=null;sbrd();render();}
 
-// ── Init ───────────────────────────────────────────────────────────
 (function(){
   const cfg=lg(KC),brd=lg(KB);
   if(cfg){
