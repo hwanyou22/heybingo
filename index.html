@@ -137,13 +137,14 @@ async function genImg(){
   const pool=S.pools.find(p=>p.id===S.poolId);
   ctx.fillStyle='#eaf2fb';ctx.fillRect(0,0,W,TH);
 
-  // 헤더
-  ctx.fillStyle='#1a3a6e';ctx.font='bold 22px sans-serif';ctx.textAlign='center';
-  ctx.fillText(`${S.name}님의 빙고`,W/2,30);
-  ctx.fillStyle='#3b6fc4';ctx.font='13px sans-serif';
-  ctx.fillText(pool?.name||'빙고',W/2,50);
-  ctx.fillStyle='#93c5fd';ctx.font='11px sans-serif';
-  ctx.fillText(`${pc}/${sz*sz} 완성  ·  빙고 ${bl.length}개  ·  ${new Date().toLocaleDateString('ko-KR')}`,W/2,68);
+  // 헤더 — 고운돋움체 사용 (이미 페이지에 로드됨)
+  await document.fonts.ready;
+  ctx.fillStyle='#1a3a6e';ctx.font='bold 25px "Gowun Dodum",serif';ctx.textAlign='center';
+  ctx.fillText(`${S.name}님의 빙고`,W/2,32);
+  ctx.fillStyle='#3b6fc4';ctx.font='15px "Gowun Dodum",serif';
+  ctx.fillText(pool?.name||'빙고',W/2,54);
+  ctx.fillStyle='#93c5fd';ctx.font='13px "Gowun Dodum",serif';
+  ctx.fillText(`${pc}/${sz*sz} 완성  ·  빙고 ${bl.length}개  ·  ${new Date().toLocaleDateString('ko-KR')}`,W/2,74);
 
   const imgs={};
   await Promise.all(S.board.map((c,i)=>{
@@ -156,7 +157,7 @@ async function genImg(){
     const cell=S.board[i],bin=bs.has(i);
     ctx.save();rr(ctx,x,y,CS,CS,8);
     ctx.fillStyle=bin?'#bfdbfe':cell?.req?'#eff6ff':'#fff';ctx.fill();
-    ctx.strokeStyle=bin?'#3b6fc4':cell?.req?'#bfdbfe':'#dbeafe';ctx.lineWidth=bin?2.5:1;ctx.stroke();ctx.restore();
+    ctx.strokeStyle=bin?'#3b6fc4':cell?.req?'#bfdbfe':'#dbeafe';ctx.lineWidth=bin?4:1;ctx.stroke();ctx.restore();
 
     if(imgs[i]){
       const im=imgs[i];
@@ -261,6 +262,7 @@ function loginH(){return`
 </div></div>`;}
 
 function adminH(){
+  if(S.editPid===null&&S.pools.length>0)S.editPid=S.pools[0].id;
   const mn=S.size*S.size;
   const poolSel=S.pools.map(p=>{
     const act=p.id===S.poolId,reqN=p.items.filter(i=>i.req).length,lack=p.items.length<mn;
