@@ -128,7 +128,7 @@ function mkBoard(){
 }
 
 async function genImg(){
-  const sz=S.size,CS=130,G=4,P=14,HDR=90;
+  const sz=S.size,CS=160,G=5,P=16,HDR=100;
   const W=sz*CS+(sz-1)*G+P*2,TH=sz*CS+(sz-1)*G+P*2+HDR,SC=2;
   const cv=document.createElement('canvas');cv.width=W*SC;cv.height=TH*SC;
   const ctx=cv.getContext('2d');ctx.scale(SC,SC);
@@ -137,14 +137,15 @@ async function genImg(){
   const pool=S.pools.find(p=>p.id===S.poolId);
   ctx.fillStyle='#eaf2fb';ctx.fillRect(0,0,W,TH);
 
-  // 헤더 — 고운돋움체 사용 (이미 페이지에 로드됨)
+  // 헤더 — 수직 가운데 정렬
   await document.fonts.ready;
+  const h1=34,h2=58,h3=80;
   ctx.fillStyle='#1a3a6e';ctx.font='bold 25px "Gowun Dodum",serif';ctx.textAlign='center';
-  ctx.fillText(`${S.name}님의 빙고`,W/2,32);
+  ctx.fillText(`${S.name}님의 빙고`,W/2,h1);
   ctx.fillStyle='#3b6fc4';ctx.font='15px "Gowun Dodum",serif';
-  ctx.fillText(pool?.name||'빙고',W/2,54);
+  ctx.fillText(pool?.name||'빙고',W/2,h2);
   ctx.fillStyle='#93c5fd';ctx.font='13px "Gowun Dodum",serif';
-  ctx.fillText(`${pc}/${sz*sz} 완성  ·  빙고 ${bl.length}개  ·  ${new Date().toLocaleDateString('ko-KR')}`,W/2,74);
+  ctx.fillText(`${pc}/${sz*sz} 완성  ·  빙고 ${bl.length}개  ·  ${new Date().toLocaleDateString('ko-KR')}`,W/2,h3);
 
   const imgs={};
   await Promise.all(S.board.map((c,i)=>{
@@ -166,31 +167,34 @@ async function genImg(){
       const s=Math.max(inner/im.width,inner/im.height);
       ctx.drawImage(im,x+pad+(inner-im.width*s)/2,y+pad+(inner-im.height*s)/2,im.width*s,im.height*s);ctx.restore();
 
-      // 상단 라벨
-      const lh=26;
-      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(x+pad,y+pad,inner,lh);
-      ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+      // 상단 라벨 — 더 크게
+      const lh=32;
+      ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(x+pad,y+pad,inner,lh);
+      ctx.fillStyle='#fff';ctx.font='bold 14px "Noto Sans KR",sans-serif';ctx.textAlign='center';
       const lbl=cell?.label||'';
-      ctx.fillText(lbl.length>14?lbl.slice(0,13)+'…':lbl,x+pad+inner/2,y+pad+lh/2+4);
+      ctx.fillText(lbl.length>13?lbl.slice(0,12)+'…':lbl,x+pad+inner/2,y+pad+lh/2+5);
 
-      // 하단 날짜
-      const dh=20;
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(x+pad,y+pad+inner-dh,inner,dh);
-      ctx.fillStyle='#e5e7eb';ctx.font='9px monospace';ctx.textAlign='center';
-      ctx.fillText(fmt(cell.photo.date),x+pad+inner/2,y+pad+inner-dh/2+3);
+      // 하단 날짜 — 더 크게
+      const dh=24;
+      ctx.fillStyle='rgba(0,0,0,.52)';ctx.fillRect(x+pad,y+pad+inner-dh,inner,dh);
+      ctx.fillStyle='#e5e7eb';ctx.font='11px monospace';ctx.textAlign='center';
+      ctx.fillText(fmt(cell.photo.date),x+pad+inner/2,y+pad+inner-dh/2+4);
 
       if(bin){ctx.fillStyle='rgba(59,111,196,.18)';ctx.fillRect(x+pad,y+pad,inner,inner);}
     } else {
-      // 빈 셀
-      if(cell?.req){
-        ctx.fillStyle='#3b82f6';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
-        ctx.fillText('★',x+CS/2,y+CS/2-12);
-      }
-      ctx.fillStyle='#1e3a8a';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+      // 빈 셀 — 더 크게, 수직 가운데
+      const lineH=17;
       const lbl=cell?.label||'',ws=lbl.split(' '),ln=[''];
       for(const w of ws){const l=ln[ln.length-1];if((l+w).length<=9)ln[ln.length-1]=(l?l+' ':'')+w;else ln.push(w);}
-      const startY=cell?.req?y+CS/2-2:y+CS/2-(ln.length-1)*7;
-      ln.forEach((l,li)=>ctx.fillText(l,x+CS/2,startY+li*14));
+      const totalH=ln.length*lineH+(cell?.req?20:0);
+      const startY=y+(CS-totalH)/2+lineH/2;
+      if(cell?.req){
+        ctx.fillStyle='#3b82f6';ctx.font='bold 14px sans-serif';ctx.textAlign='center';
+        ctx.fillText('★',x+CS/2,startY);
+      }
+      ctx.fillStyle='#1e3a8a';ctx.font='bold 14px "Noto Sans KR",sans-serif';ctx.textAlign='center';
+      const textStartY=cell?.req?startY+20:startY;
+      ln.forEach((l,li)=>ctx.fillText(l,x+CS/2,textStartY+li*lineH));
     }
   }
   return cv.toDataURL('image/png');
