@@ -26,18 +26,25 @@ button{font-family:'Gowun Dodum',serif}
 .cell.bingo{outline:2.5px solid #3b6fc4;background:#bfdbfe}
 .cell.req-empty{background:#eff6ff;border:1px solid #bfdbfe}
 .tag{display:inline-flex;align-items:center;gap:4px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:3px 8px 3px 4px;font-size:12px;margin:3px}
+/* 팝업 */
+.popup-overlay{position:fixed;inset:0;background:rgba(30,58,138,.35);display:flex;align-items:center;justify-content:center;z-index:999;padding:1.5rem}
+.popup-box{background:#fff;border-radius:18px;padding:24px 20px;max-width:300px;width:100%;border:1px solid #bfdbfe;text-align:center}
+.popup-title{font-size:16px;font-weight:800;color:#1a3a6e;margin-bottom:8px;font-family:'Noto Sans KR',sans-serif}
+.popup-sub{font-size:13px;color:#4a7cc9;line-height:1.65;margin-bottom:20px;font-family:'Gowun Dodum',serif}
+.popup-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.popup-cancel{border-radius:10px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#3b6fc4;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.popup-ok{border-radius:10px;padding:12px;background:#3b6fc4;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="popup" style="display:none"></div>
 <input type="file" id="fi" accept="image/*" style="display:none">
 <script>
-const KC='bingo_cfg_v6',KB='bingo_brd_v6';
+const KC='bingo_cfg_v7',KB='bingo_brd_v7';
 const DP=[{id:'daily',name:'오늘의 빙고',items:[
-  {id:'r1',label:'내가 가장 행복할 때의 얼굴',req:true},
-  {id:'r2',label:'나의 발',req:true},
-  {id:'r3',label:'나의 뒷모습',req:true},
-  {id:'r4',label:'누워서 바라본 하늘 또는 천장',req:true},
+  {id:'r1',label:'내가 가장 행복할 때의 얼굴',req:true},{id:'r2',label:'나의 발',req:true},
+  {id:'r3',label:'나의 뒷모습',req:true},{id:'r4',label:'누워서 바라본 하늘 또는 천장',req:true},
   {id:'o1',label:'타인의 뒷모습',req:false},{id:'o2',label:'타인의 손',req:false},
   {id:'o3',label:'빈 의자',req:false},{id:'o4',label:'다 마신 잔',req:false},
   {id:'o5',label:'두 사람의 뒷모습',req:false},{id:'o6',label:'바위 틈새에서 찾은 초록',req:false},
@@ -67,8 +74,7 @@ let S={
   screen:'welcome',name:'',
   pools:DP,poolId:'daily',size:5,
   board:[],boardSent:false,boardStartDate:null,
-  pw:'admin1234',
-  editPid:null,loginErr:'',pwMsg:'',
+  pw:'admin1234',editPid:null,loginErr:'',pwMsg:'',
   selCell:null,dlding:false,zoom:1,
 };
 
@@ -122,7 +128,7 @@ function mkBoard(){
 }
 
 async function genImg(){
-  const sz=S.size,CS=120,G=3,P=12,HDR=80;
+  const sz=S.size,CS=130,G=4,P=14,HDR=90;
   const W=sz*CS+(sz-1)*G+P*2,TH=sz*CS+(sz-1)*G+P*2+HDR,SC=2;
   const cv=document.createElement('canvas');cv.width=W*SC;cv.height=TH*SC;
   const ctx=cv.getContext('2d');ctx.scale(SC,SC);
@@ -130,38 +136,60 @@ async function genImg(){
   const pc=S.board.filter(c=>c?.photo).length;
   const pool=S.pools.find(p=>p.id===S.poolId);
   ctx.fillStyle='#eaf2fb';ctx.fillRect(0,0,W,TH);
-  ctx.fillStyle='#1a3a6e';ctx.font='bold 17px sans-serif';ctx.textAlign='center';
-  ctx.fillText(`${S.name}님의 빙고`,W/2,26);
-  ctx.fillStyle='#3b6fc4';ctx.font='11px sans-serif';
-  ctx.fillText(pool?.name||'빙고',W/2,42);
-  ctx.fillStyle='#93c5fd';ctx.font='10px sans-serif';
-  ctx.fillText(`${pc}/${sz*sz} 완성 · 빙고 ${bl.length}개 · ${new Date().toLocaleDateString('ko-KR')}`,W/2,58);
+
+  // 헤더
+  ctx.fillStyle='#1a3a6e';ctx.font='bold 22px sans-serif';ctx.textAlign='center';
+  ctx.fillText(`${S.name}님의 빙고`,W/2,30);
+  ctx.fillStyle='#3b6fc4';ctx.font='13px sans-serif';
+  ctx.fillText(pool?.name||'빙고',W/2,50);
+  ctx.fillStyle='#93c5fd';ctx.font='11px sans-serif';
+  ctx.fillText(`${pc}/${sz*sz} 완성  ·  빙고 ${bl.length}개  ·  ${new Date().toLocaleDateString('ko-KR')}`,W/2,68);
+
   const imgs={};
   await Promise.all(S.board.map((c,i)=>{
     if(!c?.photo)return;
     return new Promise(r=>{const im=new Image();im.onload=()=>{imgs[i]=im;r();};im.onerror=r;im.src=c.photo.dataUrl;});
   }));
+
   for(let i=0;i<S.board.length;i++){
     const rv=0|i/sz,cv2=i%sz,x=P+cv2*(CS+G),y=P+HDR+rv*(CS+G);
     const cell=S.board[i],bin=bs.has(i);
-    ctx.save();rr(ctx,x,y,CS,CS,7);
+    ctx.save();rr(ctx,x,y,CS,CS,8);
     ctx.fillStyle=bin?'#bfdbfe':cell?.req?'#eff6ff':'#fff';ctx.fill();
-    ctx.strokeStyle=bin?'#3b6fc4':cell?.req?'#bfdbfe':'#dbeafe';ctx.lineWidth=bin?2:1;ctx.stroke();ctx.restore();
+    ctx.strokeStyle=bin?'#3b6fc4':cell?.req?'#bfdbfe':'#dbeafe';ctx.lineWidth=bin?2.5:1;ctx.stroke();ctx.restore();
+
     if(imgs[i]){
       const im=imgs[i];
-      ctx.save();rr(ctx,x+3,y+3,CS-6,CS-6,5);ctx.clip();
-      const s=Math.max((CS-6)/im.width,(CS-6)/im.height);
-      ctx.drawImage(im,x+3+(CS-6-im.width*s)/2,y+3+(CS-6-im.height*s)/2,im.width*s,im.height*s);ctx.restore();
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(x+3,y+3,CS-6,18);
-      ctx.fillStyle='#fff';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.fillText(cell?.label||'',x+CS/2,y+15);
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(x+3,y+CS-20,CS-6,17);
-      ctx.fillStyle='#fff';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText(fmt(cell.photo.date),x+CS/2,y+CS-8);
-      if(bin){ctx.fillStyle='rgba(59,111,196,.2)';ctx.fillRect(x+3,y+3,CS-6,CS-6);}
-    }else{
-      ctx.fillStyle='#374151';ctx.font='bold 8px sans-serif';ctx.textAlign='center';
+      const pad=4,inner=CS-pad*2;
+      ctx.save();rr(ctx,x+pad,y+pad,inner,inner,5);ctx.clip();
+      const s=Math.max(inner/im.width,inner/im.height);
+      ctx.drawImage(im,x+pad+(inner-im.width*s)/2,y+pad+(inner-im.height*s)/2,im.width*s,im.height*s);ctx.restore();
+
+      // 상단 라벨
+      const lh=26;
+      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(x+pad,y+pad,inner,lh);
+      ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+      const lbl=cell?.label||'';
+      ctx.fillText(lbl.length>14?lbl.slice(0,13)+'…':lbl,x+pad+inner/2,y+pad+lh/2+4);
+
+      // 하단 날짜
+      const dh=20;
+      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(x+pad,y+pad+inner-dh,inner,dh);
+      ctx.fillStyle='#e5e7eb';ctx.font='9px monospace';ctx.textAlign='center';
+      ctx.fillText(fmt(cell.photo.date),x+pad+inner/2,y+pad+inner-dh/2+3);
+
+      if(bin){ctx.fillStyle='rgba(59,111,196,.18)';ctx.fillRect(x+pad,y+pad,inner,inner);}
+    } else {
+      // 빈 셀
+      if(cell?.req){
+        ctx.fillStyle='#3b82f6';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
+        ctx.fillText('★',x+CS/2,y+CS/2-12);
+      }
+      ctx.fillStyle='#1e3a8a';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
       const lbl=cell?.label||'',ws=lbl.split(' '),ln=[''];
-      for(const w of ws){const l=ln[ln.length-1];if((l+w).length<=8)ln[ln.length-1]=(l?l+' ':'')+w;else ln.push(w);}
-      ln.forEach((l,li)=>ctx.fillText(l,x+CS/2,y+CS/2+6+li*11));
+      for(const w of ws){const l=ln[ln.length-1];if((l+w).length<=9)ln[ln.length-1]=(l?l+' ':'')+w;else ln.push(w);}
+      const startY=cell?.req?y+CS/2-2:y+CS/2-(ln.length-1)*7;
+      ln.forEach((l,li)=>ctx.fillText(l,x+CS/2,startY+li*14));
     }
   }
   return cv.toDataURL('image/png');
@@ -172,12 +200,28 @@ async function doSave(){
   try{
     const dataUrl=await genImg();
     const ds=new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').replace(/-$/,'');
-    const fname=`빙고_${S.name}_${ds}.png`;
-    const a=document.createElement('a');a.download=fname;a.href=dataUrl;a.click();
+    const a=document.createElement('a');a.download=`빙고_${S.name}_${ds}.png`;a.href=dataUrl;a.click();
     S.boardSent=true;sbrd();
   }finally{S.dlding=false;render();}
 }
 
+function showPopup(){
+  const p=document.getElementById('popup');
+  p.style.display='block';
+  p.innerHTML=`<div class="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-title">이번 탐험은 여기서 완료할까요?</div>
+      <div class="popup-sub">아직 빙고가 완성되지 않았어요.<br>그래도 지금까지의 기록을 저장할게요.</div>
+      <div class="popup-btns">
+        <button class="popup-cancel" onclick="closePopup()">계속 탐험하기</button>
+        <button class="popup-ok" onclick="closePopup();SD()">저장하고 종료</button>
+      </div>
+    </div>
+  </div>`;
+}
+function closePopup(){document.getElementById('popup').style.display='none';}
+
+// ── Render ─────────────────────────────────────────────────────────
 function render(){
   const app=document.getElementById('app');
   if(S.screen==='welcome')app.innerHTML=welcomeH();
@@ -266,9 +310,7 @@ function adminH(){
         <button onclick="SS(5)" style="flex:1;padding:10px;border:${S.size===5?'2px solid #3b6fc4':'1px solid #bfdbfe'};border-radius:8px;background:${S.size===5?'#eff6ff':'#fff'};font-weight:700;cursor:pointer;font-size:18px;color:${S.size===5?'#3b6fc4':'#1a3a6e'}">5×5</button>
       </div>
     </div>
-    <div class="card">
-      <p style="margin-bottom:10px;font-weight:700;font-size:13px;color:#3b6fc4">활성 단어 풀</p>${poolSel}
-    </div>
+    <div class="card"><p style="margin-bottom:10px;font-weight:700;font-size:13px;color:#3b6fc4">활성 단어 풀</p>${poolSel}</div>
     <div class="card">
       <p style="margin-bottom:10px;font-weight:700;font-size:13px;color:#3b6fc4">미션 풀 관리</p>
       <div style="display:flex;gap:8px;margin-bottom:.75rem">
@@ -290,41 +332,55 @@ function adminH(){
 function userH(){
   const bl=bgs(S.board,S.size),bs=new Set(bl.flat());
   const pc=S.board.filter(c=>c?.photo).length,tot=S.board.length;
+  const hasBingo=bl.length>0;
   const z=S.zoom;
-  const fsLabel=Math.round(13*z);
-  const fsDate=Math.round(7*z);
-  const fsPhoto=Math.round(8*z);
+  const fsSz=Math.round(11*z);
+  const fsPhoto=Math.round(7*z);
+  const fsDate=Math.round(6*z);
 
   const cells=S.board.map((c,i)=>{
     const bin=bs.has(i),has=!!c?.photo;
     const cellClass=bin?'cell bingo':c?.req&&!has?'cell req-empty':'cell';
     if(has)return`<div class="${cellClass}" onclick="PP(${i})">
       <img src="${c.photo.dataUrl}" alt="${esc(c.label)}" style="width:100%;height:100%;object-fit:cover;display:block">
-      <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.5);padding:3px 4px">
-        <p style="margin:0;color:#fff;font-size:${fsPhoto}px;font-weight:700;font-family:'Noto Sans KR',sans-serif;text-align:center;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.label)}</p>
+      <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.5);padding:2px 3px">
+        <p style="margin:0;color:#fff;font-size:${fsPhoto}px;font-weight:700;font-family:'Noto Sans KR',sans-serif;text-align:center;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.label)}</p>
       </div>
-      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);padding:2px 4px">
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);padding:1px 3px">
         <p style="margin:0;color:#e5e7eb;font-size:${fsDate}px;text-align:center;font-family:monospace;line-height:1.4">${fmt(c.photo.date)}</p>
       </div>
-      <button onclick="RP(event,${i})" style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">×</button>
+      <button onclick="RP(event,${i})" style="position:absolute;top:2px;right:2px;width:15px;height:15px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">×</button>
       ${bin?'<div style="position:absolute;inset:0;background:rgba(59,111,196,.15);pointer-events:none"></div>':''}
     </div>`;
     return`<div class="${cellClass}" onclick="PP(${i})">
-      <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;gap:2px">
-        ${c?.req?`<span style="font-size:${Math.round(9*z)}px;color:#3b82f6;line-height:1">★</span>`:''}
-        <p style="margin:0;font-size:${fsLabel}px;font-weight:700;font-family:'Noto Sans KR',sans-serif;color:${c?.req?'#1e3a8a':'#1e3a8a'};text-align:center;line-height:1.35;word-break:keep-all">${esc(c?.label||'')}</p>
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px;gap:1px">
+        ${c?.req?`<span style="font-size:${Math.round(8*z)}px;color:#3b82f6;line-height:1">★</span>`:''}
+        <p style="margin:0;font-size:${fsSz}px;font-weight:700;font-family:'Noto Sans KR',sans-serif;color:#1e3a8a;text-align:center;line-height:1.25;word-break:keep-all">${esc(c?.label||'')}</p>
       </div>
     </div>`;
   }).join('');
 
   const startDateTxt=S.boardStartDate?`이번 탐험은 ${fmtStart(S.boardStartDate)}에 시작했습니다`:'';
 
-  const btnStyle=(active)=>active
-    ?`background:#3b6fc4;color:#fff;border:1.5px solid #3b6fc4;cursor:pointer`
-    :`background:#bfdbfe;color:#1e3a8a;border:1.5px solid #93c5fd;cursor:pointer`;
+  // 버튼 스타일: 빙고 완성 시 진한 파란, 아니면 연한 파란
+  const btnBase=`border-radius:14px;padding:14px 8px;text-align:center;font-family:'Noto Sans KR',sans-serif;width:100%;cursor:pointer`;
+  const btnOn=`${btnBase};background:#3b6fc4;border:1.5px solid #3b6fc4`;
+  const btnOff=`${btnBase};background:#bfdbfe;border:1.5px solid #93c5fd`;
+  const titleOn=`color:#fff`;
+  const titleOff=`color:#1e3a8a`;
+  const subOn=`color:rgba(255,255,255,.85)`;
+  const subOff=`color:#4a7cc9`;
+
+  const endStyle=hasBingo?btnOn:btnOff;
+  const endTitleC=hasBingo?titleOn:titleOff;
+  const endSubC=hasBingo?subOn:subOff;
+  // 새 탐험 버튼: 저장 완료 후 활성
+  const newStyle=S.boardSent?btnOn:btnOff;
+  const newTitleC=S.boardSent?titleOn:titleOff;
+  const newSubC=S.boardSent?subOn:subOff;
 
   return`<div style="padding:.75rem">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.65rem">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.6rem">
       <div>
         <h1 style="font-size:24px;font-weight:900;color:#1a3a6e;letter-spacing:1.5px;line-height:1.25;font-family:'Gowun Dodum',serif">${esc(S.name)}님의 빙고</h1>
         ${startDateTxt?`<p style="font-size:12px;color:#4a7cc9;margin-top:4px;letter-spacing:.5px;font-family:'Gowun Dodum',serif">${startDateTxt}</p>`:''}
@@ -333,14 +389,14 @@ function userH(){
       <button onclick="S.screen='login';S.loginErr='';render()" style="background:none;border:1px solid #bfdbfe;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#4a7cc9;flex-shrink:0;margin-left:8px">⚙</button>
     </div>
 
-    ${bl.length>0?`<div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:8px 14px;margin-bottom:.65rem;text-align:center">
+    ${hasBingo?`<div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:8px 14px;margin-bottom:.6rem;text-align:center">
       <span style="font-weight:700;color:#1e40af;font-size:13px;letter-spacing:.5px;font-family:'Noto Sans KR',sans-serif">🎉 ${bl.length}빙고 달성!</span>
     </div>`:''}
 
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:6px">
       <span style="font-size:11px;color:#93c5fd;font-family:'Gowun Dodum',serif">확대</span>
-      <button onclick="SZ(${Math.max(.7,z-.15).toFixed(2)})" style="width:30px;height:30px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:18px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
-      <button onclick="SZ(${Math.min(2,z+.15).toFixed(2)})" style="width:30px;height:30px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:18px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+      <button onclick="SZ(${Math.max(.7,z-.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+      <button onclick="SZ(${Math.min(2,z+.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
     </div>
 
     <div style="overflow:auto">
@@ -349,18 +405,23 @@ function userH(){
     <div style="height:${z>1?Math.round((z-1)*300)+'px':'0'}"></div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-      <button onclick="SD()" ${S.dlding?'disabled':''} style="border-radius:14px;padding:15px 10px;text-align:center;font-family:'Noto Sans KR',sans-serif;${btnStyle(true)};opacity:${S.dlding?'.7':'1'}">
-        <span style="display:block;font-size:14px;font-weight:800;margin-bottom:5px;white-space:nowrap;color:#fff">탐험 종료하기</span>
-        <span style="display:block;font-size:10px;font-weight:400;color:rgba(255,255,255,.85)">빙고 사진을 저장합니다</span>
+      <button onclick="onEnd()" ${S.dlding?'disabled':''} style="${endStyle};opacity:${S.dlding?.7:1}">
+        <span style="display:block;font-size:13px;font-weight:800;margin-bottom:4px;white-space:nowrap;${endTitleC}">탐험 종료하기</span>
+        <span style="display:block;font-size:10px;font-weight:400;${endSubC}">빙고 사진을 저장합니다</span>
       </button>
-      <button onclick="${S.boardSent?'NB()':''}" style="border-radius:14px;padding:15px 10px;text-align:center;font-family:'Noto Sans KR',sans-serif;${btnStyle(S.boardSent)};${!S.boardSent?'opacity:.6':''}">
-        <span style="display:block;font-size:13px;font-weight:800;margin-bottom:5px;white-space:nowrap;color:${S.boardSent?'#fff':'#1e3a8a'}">새로운 탐험 시작하기</span>
-        <span style="display:block;font-size:10px;font-weight:400;color:${S.boardSent?'rgba(255,255,255,.85)':'#3b6fc4'}">새로운 세계가 열릴 거예요</span>
+      <button onclick="${S.boardSent?'NB()':''}" style="${newStyle};${!S.boardSent?'opacity:.55':''}">
+        <span style="display:block;font-size:13px;font-weight:800;margin-bottom:4px;white-space:nowrap;${newTitleC}">새로운 탐험 시작하기</span>
+        <span style="display:block;font-size:10px;font-weight:400;${newSubC}">새로운 세계가 열릴 거예요</span>
       </button>
     </div>
-    ${!S.boardSent?`<p style="font-size:11px;color:#93c5fd;text-align:center;margin-top:8px;font-family:'Gowun Dodum',serif">탐험을 먼저 종료해야 새로운 빙고를 시작할 수 있어요</p>`:''}
+    ${!S.boardSent?`<p style="font-size:11px;color:#93c5fd;text-align:center;margin-top:7px;font-family:'Gowun Dodum',serif">탐험을 먼저 종료해야 새로운 빙고를 시작할 수 있어요</p>`:''}
   </div>`;}
 
+// ── Actions ────────────────────────────────────────────────────────
+function onEnd(){
+  const bl=bgs(S.board,S.size);
+  if(bl.length>0){SD();}else{showPopup();}
+}
 function SZ(z){S.zoom=parseFloat(z);render();}
 function startBingo(){
   const v=document.getElementById('uname')?.value?.trim();
@@ -382,6 +443,7 @@ function PP(i){S.selCell=i;document.getElementById('fi').click();}
 function RP(ev,i){ev.stopPropagation();S.board[i].photo=null;sbrd();render();}
 async function SD(){S.dlding=true;render();await doSave();S.dlding=false;render();}
 
+// ── Init ───────────────────────────────────────────────────────────
 (function(){
   const cfg=lg(KC),brd=lg(KB);
   if(cfg){if(cfg.pools)S.pools=cfg.pools;if(cfg.poolId)S.poolId=cfg.poolId;if(cfg.size)S.size=cfg.size;if(cfg.pw)S.pw=cfg.pw;if(cfg.name)S.name=cfg.name;}
