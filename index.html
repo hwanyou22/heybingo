@@ -225,6 +225,7 @@ function welcomeH(){return`
     <button onclick="startBingo()" style="width:100%;background:#3b6fc4;color:#fff;border:none;border-radius:14px;padding:14px;font-size:16px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700;letter-spacing:1px">
       시작할까요?
     </button>
+    <p id="start-err" style="font-size:12px;color:#ef4444;text-align:center;margin-top:10px;line-height:1.5;font-family:'Gowun Dodum',serif"></p>
   </div>
 </div>`;}
 
@@ -406,7 +407,18 @@ function SZ(z){S.zoom=parseFloat(z);render();}
 function startBingo(){
   const v=document.getElementById('uname')?.value?.trim();
   if(!v){document.getElementById('uname')?.focus();return;}
-  S.name=v;sc();mkBoard();S.screen='user';render();
+  S.name=v;sc();
+  if(!mkBoard()){
+    const need=S.size*S.size;
+    const pool=S.pools.find(p=>p.id===S.poolId);
+    const cnt=pool?.items?.length||0;
+    const msg=document.getElementById('start-err');
+    if(msg)msg.textContent=cnt===0
+      ?'미션이 없어요. 관리자 모드에서 미션을 먼저 추가해주세요.'
+      :`미션이 ${cnt}개예요. 빙고판 크기(${S.size}×${S.size}=${need}개)보다 많아야 해요.`;
+    return;
+  }
+  S.screen='user';render();
 }
 function NB(){S.board=[];S.boardSent=false;S.boardStartDate=null;sbrd();S.screen='welcome';render();}
 function AL(){const v=document.getElementById('lpw')?.value||'';if(v===S.pw){S.screen='admin';S.loginErr='';S.pwMsg='';render();}else{S.loginErr='비밀번호가 틀렸습니다.';render();}}
