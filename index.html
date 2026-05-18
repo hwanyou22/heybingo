@@ -40,80 +40,88 @@ button{font-family:'Gowun Dodum',serif}
 <div id="popup" style="display:none"></div>
 <input type="file" id="fi" accept="image/*" style="display:none">
 <script>
-const KC='bingo_cfg_v9',KB='bingo_brd_v9';
+const KC='bingo_cfg_v10',KB='bingo_brd_v10';
+
 const DP=[{id:'daily',name:'오늘의 빙고',items:[
-  {id:'r1',label:'내가 가장 행복할 때의 얼굴',req:true},
-  {id:'r2',label:'나의 발',req:true},
-  {id:'r3',label:'나의 뒷모습',req:true},
-  {id:'r4',label:'누워서 바라본 하늘 또는 천장',req:true},
-  {id:'o1',label:'타인의 뒷모습',req:false},
-  {id:'o2',label:'타인의 손',req:false},
-  {id:'o3',label:'빈 의자',req:false},
-  {id:'o4',label:'다 마신 잔',req:false},
-  {id:'o5',label:'두 사람의 뒷모습',req:false},
-  {id:'o6',label:'바위 틈새에서 찾은 초록',req:false},
-  {id:'o7',label:'가장 마음에 드는 나뭇잎의 잎맥',req:false},
-  {id:'o8',label:'우연히 발견한 하트',req:false},
-  {id:'o9',label:'구름',req:false},
-  {id:'o10',label:'내 그림자',req:false},
-  {id:'o11',label:'나에게 의미 있는 숫자',req:false},
-  {id:'o12',label:'나를 웃게 만든 문장',req:false},
-  {id:'o13',label:"내가 고른 '오늘의 질감'",req:false},
-  {id:'o14',label:"타인에게 받은 '응원합니다' 메시지",req:false},
-  {id:'o15',label:'가장 작은 생명',req:false},
-  {id:'o16',label:"아무거나 '곡선'",req:false},
-  {id:'o17',label:'단단하게 뿌리 내린 것',req:false},
-  {id:'o18',label:'창틀에 걸린 하늘',req:false},
-  {id:'o19',label:'정돈된 신발',req:false},
-  {id:'o20',label:'열려있는 문',req:false},
-  {id:'o21',label:'손바닥 위의 돌이나 낙엽',req:false},
-  {id:'o22',label:"색깔 '아무거나'",req:false},
-  {id:'o23',label:'낯선 사람에게 V 요청해서 찍기',req:false},
-  {id:'o24',label:'이름 초성이 겹치는 사람과 이름표 사진',req:false},
-  {id:'o25',label:'내가 착용한 것 중 가장 오래된 것',req:false},
-  {id:'o26',label:'이 자리에서 보이는 가장 먼 곳',req:false},
-  {id:'o27',label:'오늘 가장 많이 들여다본 화면',req:false},
-  {id:'o28',label:'나를 설명하는 물건 하나를 손바닥에 올려놓고',req:false},
-  {id:'o29',label:'나만 알아볼 수 있는 메모나 낙서',req:false},
-  {id:'o30',label:'오늘 처음 먹거나 마신 것의 흔적',req:false},
-  {id:'o31',label:'지금 가장 편한 자세로 찍은 셀카',req:false},
-  {id:'o32',label:'빛이 만들어낸 무늬나 그림자',req:false},
-  {id:'o33',label:'사람 손이 닿아 반질반질해진 것',req:false},
-  {id:'o34',label:'두 가지 색이 만나는 경계선',req:false},
-  {id:'o35',label:'시간의 흔적이 보이는 것',req:false},
-  {id:'o36',label:'혼자 피어 있는 꽃 한 송이',req:false},
-  {id:'o37',label:'예상치 못한 곳에서 발견한 글자',req:false},
-  {id:'o38',label:'쌍을 잃어버린 것',req:false},
-  {id:'o39',label:'무언가를 기다리는 듯한 장면',req:false},
-  {id:'o40',label:'같은 것이 반복되는 패턴',req:false},
-  {id:'o41',label:'지금 창문 너머로 보이는 것',req:false},
-  {id:'o42',label:'천천히 움직이는 것',req:false},
-  {id:'o43',label:'가장 가까운 것과 가장 먼 것을 한 프레임에',req:false},
-  {id:'o44',label:'지금 이 공간에서 가장 조용해 보이는 것',req:false},
-  {id:'o45',label:'눈을 감고 찍은 셀카',req:false},
-  {id:'o46',label:'지금 착용한 것 중 가장 오래된 것',req:false},
-  {id:'o47',label:'이 자리에서 보이는 가장 먼 곳',req:false},
-  {id:'o48',label:'나를 설명하는 물건 하나를 손바닥에 올려놓고',req:false},
-  {id:'o49',label:'나만 알아볼 수 있는 메모나 낙서',req:false},
-  {id:'o50',label:'빛이 만들어낸 무늬나 그림자',req:false},
-  {id:'o51',label:'사람 손이 닿아 반질반질해진 것',req:false},
-  {id:'o52',label:'혼자 피어 있는 꽃 한 송이',req:false},
-  {id:'o53',label:'예상치 못한 곳에서 발견한 글자',req:false},
-  {id:'o54',label:'무언가를 기다리는 듯한 장면',req:false},
-  {id:'o55',label:'지금 창문 너머로 보이는 것',req:false},
+  // 필수
+  {id:'r1',label:'나의 발',req:true},
+  {id:'r2',label:'나의 뒷모습',req:true},
+  {id:'r3',label:'누워서 바라본 하늘 또는 천장',req:true},
+  // 자기 자신
+  {id:'a1',label:'지금 이 순간의 셀카',req:false},
+  {id:'a2',label:'눈을 감고 찍은 셀카',req:false},
+  {id:'a3',label:'내 그림자',req:false},
+  {id:'a4',label:'주먹 불끈 쥔 내 손',req:false},
+  {id:'a5',label:'내가 가장 좋아하는 색',req:false},
+  // 타인·관계
+  {id:'b1',label:'타인의 뒷모습',req:false},
+  {id:'b2',label:'타인의 손',req:false},
+  {id:'b3',label:'두 사람의 뒷모습',req:false},
+  {id:'b4',label:'v포즈한 다른 사람',req:false},
+  {id:'b5',label:'다른 사람과 악수하면서',req:false},
+  // 사물·공간
+  {id:'c1',label:'빈 의자',req:false},
+  {id:'c2',label:'다 마신 잔',req:false},
+  {id:'c3',label:'길들여져서 편안한 물건',req:false},
+  {id:'c4',label:'구겨진 영수증',req:false},
+  {id:'c5',label:'매일 사용하는 칫솔',req:false},
+  {id:'c6',label:'정돈된 신발',req:false},
+  {id:'c7',label:'정돈되어 있는 무언가',req:false},
+  {id:'c8',label:'손바닥 위의 돌이나 낙엽',req:false},
+  {id:'c9',label:'열려있는 문',req:false},
+  {id:'c10',label:"무엇이든 '이정표'",req:false},
+  // 자연
+  {id:'d1',label:'구름',req:false},
+  {id:'d2',label:'혼자 피어 있는 꽃 한 송이',req:false},
+  {id:'d3',label:'바위 틈새에서 찾은 초록',req:false},
+  {id:'d4',label:'나뭇잎의 잎맥',req:false},
+  {id:'d5',label:'가장 작은 생명',req:false},
+  {id:'d6',label:'천천히 움직이는 것',req:false},
+  // 빛·형태·질감
+  {id:'e1',label:'틈새의 빛',req:false},
+  {id:'e2',label:'울퉁불퉁한 질감',req:false},
+  {id:'e3',label:"아무거나 '곡선'",req:false},
+  {id:'e4',label:'대각선',req:false},
+  {id:'e5',label:'직선과 곡선을 한 프레임에',req:false},
+  {id:'e6',label:'반복되는 패턴',req:false},
+  {id:'e7',label:'복잡하게 엉킨 것',req:false},
+  {id:'e8',label:'두 가지 색이 만나는 경계선',req:false},
+  {id:'e9',label:"색깔 '아무거나'",req:false},
+  {id:'e10',label:'우연히 발견한 하트',req:false},
+  {id:'e11',label:'뾰족한 것',req:false},
+  {id:'e12',label:'짝이 있는 것',req:false},
+  {id:'e13',label:'가장 작은 동그라미를 찾아서',req:false},
+  // 시간·장면
+  {id:'f1',label:'지금 창문 너머로 보이는 것',req:false},
+  {id:'f2',label:'창틀에 걸린 하늘',req:false},
+  {id:'f3',label:'시간의 흔적이 보이는 것',req:false},
+  {id:'f4',label:'예상치 못한 곳에서 발견한 글자',req:false},
+  {id:'f5',label:'나를 웃게 만든 문장',req:false},
+  // 숫자
+  {id:'g1',label:'나에게 의미 있는 숫자',req:false},
+  {id:'g2',label:'세자리 숫자 아무거나',req:false},
+  {id:'g3',label:'연속되는 숫자 두 자리',req:false},
+  {id:'g4',label:'지금 몇 시인지 찰칵!',req:false},
+  // 일상·감각
+  {id:'h1',label:'오늘의 밥',req:false},
+  {id:'h2',label:'바닥에 앉아서 찍은 아무거나',req:false},
+  {id:'h3',label:"'쉼'을 상징하는 것",req:false},
+  {id:'h4',label:"'연결'을 상징하는 것",req:false},
+  {id:'h5',label:"단단해 보이는 '무언가'",req:false},
 ]}];
 
 let S={
   screen:'welcome',name:'',
   pools:DP,poolId:'daily',size:5,
   board:[],boardSent:false,boardStartDate:null,
+  recentIds:[],
   pw:'admin1234',editPid:null,loginErr:'',pwMsg:'',
   selCell:null,dlding:false,zoom:1,
 };
 
 function lg(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch{return null;}}
 function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
-function sc(){ls(KC,{pools:S.pools,poolId:S.poolId,size:S.size,pw:S.pw,name:S.name});}
+function sc(){ls(KC,{pools:S.pools,poolId:S.poolId,size:S.size,pw:S.pw,name:S.name,recentIds:S.recentIds});}
 function sbrd(){ls(KB,{board:S.board,boardSent:S.boardSent,boardStartDate:S.boardStartDate});}
 function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
 function fmt(iso){const d=new Date(iso),p=n=>('0'+n).slice(-2);return`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
@@ -145,18 +153,29 @@ function rr(ctx,x,y,w,h,r){
   ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
 }
 
+// 최근 사용 항목 피해서 랜덤 추출
 function mkBoard(){
   const pool=S.pools.find(p=>p.id===S.poolId);
   if(!pool)return false;
   const need=S.size*S.size;
   const req=pool.items.filter(i=>i.req);
-  const opt=shuf(pool.items.filter(i=>!i.req));
+  const opt=pool.items.filter(i=>!i.req);
   if(req.length>need)return false;
-  const fill=opt.slice(0,need-req.length);
-  if(req.length+fill.length<need)return false;
+  if(req.length+opt.length<need)return false;
+
+  // 최근 사용 항목을 뒤로 밀어서 겹침 최소화
+  const recent=new Set(S.recentIds||[]);
+  const fresh=shuf(opt.filter(i=>!recent.has(i.id)));
+  const stale=shuf(opt.filter(i=>recent.has(i.id)));
+  const ordered=[...fresh,...stale];
+  const fill=ordered.slice(0,need-req.length);
+
   S.board=shuf([...req,...fill]).map(it=>({...it,photo:null}));
+  // 이번 판 사용 ID 기록 (최대 50개 유지)
+  const used=S.board.map(it=>it.id);
+  S.recentIds=[...new Set([...used,...(S.recentIds||[])])].slice(0,50);
   S.boardSent=false;S.boardStartDate=new Date().toISOString();
-  sbrd();return true;
+  sbrd();sc();return true;
 }
 
 async function genImg(){
@@ -438,7 +457,7 @@ async function SD(){S.dlding=true;render();await doSave();S.dlding=false;render(
 
 (function(){
   const cfg=lg(KC),brd=lg(KB);
-  if(cfg){if(cfg.pools)S.pools=cfg.pools;if(cfg.poolId)S.poolId=cfg.poolId;if(cfg.size)S.size=cfg.size;if(cfg.pw)S.pw=cfg.pw;if(cfg.name)S.name=cfg.name;}
+  if(cfg){if(cfg.pools)S.pools=cfg.pools;if(cfg.poolId)S.poolId=cfg.poolId;if(cfg.size)S.size=cfg.size;if(cfg.pw)S.pw=cfg.pw;if(cfg.name)S.name=cfg.name;if(cfg.recentIds)S.recentIds=cfg.recentIds;}
   if(brd){if(brd.board&&brd.board.length>0)S.board=brd.board;if(brd.boardSent!==undefined)S.boardSent=brd.boardSent;if(brd.boardStartDate)S.boardStartDate=brd.boardStartDate;}
   if(S.board.length>0&&!S.boardSent)S.screen='user';else S.screen='welcome';
   document.getElementById('fi').addEventListener('change',async function(ev){
