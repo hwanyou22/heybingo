@@ -2,141 +2,72 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="오늘의 빙고">
 <meta name="theme-color" content="#3b6fc4">
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 <title>오늘의 빙고</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#eaf2fb;min-height:100vh;-webkit-tap-highlight-color:transparent}
+body{font-family:'Gowun Dodum',serif;background:#eaf2fb;min-height:100vh;-webkit-tap-highlight-color:transparent}
 #app{max-width:520px;margin:0 auto}
-input[type=text],input[type=password],textarea{font-family:inherit;font-size:14px;border:1px solid #dde8f5;border-radius:8px;padding:9px 12px;outline:none;background:#fff;color:#111827;width:100%}
-input:focus,textarea:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.2)}
-button{font-family:inherit}
-.card{background:#fff;border:1px solid #dde8f5;border-radius:12px;padding:16px;margin-bottom:12px}
+input[type=text],input[type=password]{font-family:'Gowun Dodum',serif;font-size:14px;border:1px solid #bfdbfe;border-radius:8px;padding:9px 12px;outline:none;background:#fff;color:#1e3a8a;width:100%}
+input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+button{font-family:'Gowun Dodum',serif}
+.card{background:#fff;border:1px solid #bfdbfe;border-radius:12px;padding:16px;margin-bottom:12px}
 .bp{background:#3b6fc4;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-weight:500;cursor:pointer;font-size:14px}
-.bg{background:none;border:1px solid #dde8f5;border-radius:8px;padding:9px 14px;cursor:pointer;color:#6b7280;font-size:13px}
-.board{display:grid;gap:3px}
-.cell{aspect-ratio:1;border-radius:7px;overflow:hidden;cursor:pointer;position:relative;background:#fff;border:1px solid #dde8f5;user-select:none;-webkit-user-select:none}
-.cell.bingo{outline:2.5px solid #3b6fc4;background:#c8dff4}
-.tag{display:inline-flex;align-items:center;gap:4px;background:#eaf2fb;border:1px solid #dde8f5;border-radius:20px;padding:3px 8px 3px 4px;font-size:12px;margin:3px}
+.bg{background:none;border:1px solid #bfdbfe;border-radius:8px;padding:9px 14px;cursor:pointer;color:#3b6fc4;font-size:13px}
+.board{display:grid;gap:4px}
+.cell{aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;background:#fff;border:1px solid #dbeafe;user-select:none;-webkit-user-select:none}
+.cell.bingo{outline:2.5px solid #3b6fc4;background:#bfdbfe}
+.cell.req-empty{background:#eff6ff;border:1px solid #bfdbfe}
+.tag{display:inline-flex;align-items:center;gap:4px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:3px 8px 3px 4px;font-size:12px;margin:3px}
+.popup-overlay{position:fixed;inset:0;background:rgba(30,58,138,.35);display:flex;align-items:center;justify-content:center;z-index:999;padding:1.5rem}
+.popup-box{background:#fff;border-radius:18px;padding:24px 20px;max-width:300px;width:100%;border:1px solid #bfdbfe;text-align:center}
+.popup-title{font-size:16px;font-weight:800;color:#1a3a6e;margin-bottom:8px;font-family:'Noto Sans KR',sans-serif}
+.popup-sub{font-size:13px;color:#4a7cc9;line-height:1.65;margin-bottom:20px;font-family:'Gowun Dodum',serif}
+.popup-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.popup-cancel{border-radius:10px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#3b6fc4;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.popup-ok{border-radius:10px;padding:12px;background:#3b6fc4;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="popup" style="display:none"></div>
 <input type="file" id="fi" accept="image/*" style="display:none">
 <script>
-const KC='bingo_cfg_v4',KB='bingo_brd_v4',KD='bingo_diary_v1';
+const KC='bingo_cfg_v10',KB='bingo_brd_v10',KD='bingo_diary_v1';
 
 /* ── 기본 일지 데이터 (최신순) ── */
-const DD=[
-  {date:'2026.05.12',text:'찔끔찔끔 수정 중. 공유 버튼 추가하고, 따로 적어두었던 개발 일지도 넣었다. 안정화되면 업데이트할 일은 없겠지만, 그래도 나중에 읽어보면 재미있을 것 같다.',tag:'개선'},
-  {date:'2026.05.10',text:'빨리 배포해야 하는데 아직도 뭘 놓친 것 같은 불안함이 있다. 보통 일단 질러 놓고 업데이트 하던데. 산책하고 와야 겠다.',tag:'고민중'},
-  {date:'2026.05.09',text:"'오늘의 빙고' 이름은 그대로 두되, '탐험'의 콘셉트를 붙였다. 나도 인식하고, 주변도 인식하고, 그런 모든 것들이 결국 탐험이니까.",tag:'기획 한스푼 추가'},
-  {date:'2026.05.07',text:'지인들이 먼저 완성한 빙고판 사진을 보내줬다. 5빙고만 해도 되는데, 다 채운 사람도 있고. 하기 어려운 미션 주제로 바꿔봐야 하나.',tag:'피드백'},
-  {date:'2026.05.06',text:"주변 지인들에게 우선 링크 배포 시작. '산책하는 게 재밌다', '이 기록으로 다꾸해야 겠다' 등등 피드백. 좋군.",tag:'v1.0'},
-  {date:'2026.05.05',text:'필수 미션 로직 고민하다가 시간 다 씀. 단순해 보이지만, 이런 게 제일 오래 걸리더라.',tag:'UI 개선'},
-  {date:'2026.05.04',text:'확대/축소 기능 추가. 폰 화면이 작은 사람들을 배려하고 싶었음. 생각보다 잘 작동해서 뿌듯.',tag:'UI 개선'},
-  {date:'2026.05.01',text:'5월의 시작. 새롭게 바꾸고 싶어서 원래 그린에서 블루로 색 변경. 폰트도 변경.',tag:'디자인 개선'},
-  {date:'2026.04.28',text:"미션 목록 50개 선별. '나의 뒷모습 찍기'를 어떻게 하냐고 해서, '그러니까 미션이지'라고 답했다. 후후.",tag:'개발'},
-  {date:'2026.04.25',text:'기록할 주제는 랜덤으로 노출하지만, 관통하는 메시지가 필요함. 나, 타인, 우리로 확장할 주제면 좋겠다.',tag:'기획중'},
-  {date:'2026.04.23',text:'혼자 할 수 있을 것. 결과를 같이 나눌 수 있는 대화의 소재가 될 수 있을 것. 여기에 초점.',tag:'기획중'},
-  {date:'2026.04.22',text:'앱은 무겁고 번거로우니 웹기반으로 가자. 근데 빙고판 채우는 건 경쟁이 되면 안돼. 내가 중요하게 생각하는 콘셉트임.',tag:'기획중'},
-  {date:'2026.04.20',text:'차별화 방안을 생각해 봄. 빙고를 떠올림. 코딩을 시작해보자.',tag:'코딩 시작'},
-  {date:'2026.04.18',text:'산책하면서 사진 찍은 것을 기록하는 어플은 이미 많잖아.',tag:'고민중'},
-  {date:'2026.04.15',text:'내가 뭘 좋아하더라. 사진 찍는 것. 기록하는 것. 산책하는 것. 이 세 가지를 합쳐볼까.',tag:'시작'},
+const DD = [
+  { date:'2026.05.12', text:'찔끔찔끔 수정 중. 공유 버튼 추가하고, 따로 적어두었던 개발 일지도 넣었다. 안정화되면 업데이트할 일은 없겠지만, 그래도 나중에 읽어보면 재미있을 것 같다.', tag:'개선' },
+  { date:'2026.05.10', text:'빨리 배포해야 하는데 아직도 뭘 놓친 것 같은 불안함이 있다. 보통 일단 질러 놓고 업데이트 하던데. 산책하고 와야 겠다.', tag:'고민중' },
+  { date:'2026.05.09', text:"'오늘의 빙고' 이름은 그대로 두되, '탐험'의 콘셉트를 붙였다. 나도 인식하고, 주변도 인식하고, 그런 모든 것들이 결국 탐험이니까.", tag:'기획 한스푼 추가' },
+  { date:'2026.05.07', text:'지인들이 먼저 완성한 빙고판 사진을 보내줬다. 5빙고만 해도 되는데, 다 채운 사람도 있고. 하기 어려운 미션 주제로 바꿔봐야 하나.', tag:'피드백' },
+  { date:'2026.05.06', text:"주변 지인들에게 우선 링크 배포 시작. '산책하는 게 재밌다', '이 기록으로 다꾸해야 겠다' 등등 피드백. 좋군.", tag:'v1.0' },
+  { date:'2026.05.05', text:'필수 미션 로직 고민하다가 시간 다 씀. 단순해 보이지만, 이런 게 제일 오래 걸리더라.', tag:'UI 개선' },
+  { date:'2026.05.04', text:'확대/축소 기능 추가. 폰 화면이 작은 사람들을 배려하고 싶었음. 생각보다 잘 작동해서 뿌듯.', tag:'UI 개선' },
+  { date:'2026.05.01', text:'5월의 시작. 새롭게 바꾸고 싶어서 원래 그린에서 블루로 색 변경. 폰트도 변경.', tag:'디자인 개선' },
+  { date:'2026.04.28', text:"미션 목록 50개 선별. '나의 뒷모습 찍기'를 어떻게 하냐고 해서, '그러니까 미션이지'라고 답했다. 후후.", tag:'개발' },
+  { date:'2026.04.25', text:'기록할 주제는 랜덤으로 노출하지만, 관통하는 메시지가 필요함. 나, 타인, 우리로 확장할 주제면 좋겠다.', tag:'기획중' },
+  { date:'2026.04.23', text:'혼자 할 수 있을 것. 결과를 같이 나눌 수 있는 대화의 소재가 될 수 있을 것. 여기에 초점.', tag:'기획중' },
+  { date:'2026.04.22', text:'앱은 무겁고 번거로우니 웹기반으로 가자. 근데 빙고판 채우는 건 경쟁이 되면 안돼. 내가 중요하게 생각하는 콘셉트임.', tag:'기획중' },
+  { date:'2026.04.20', text:'차별화 방안을 생각해 봄. 빙고를 떠올림. 코딩을 시작해보자.', tag:'코딩 시작' },
+  { date:'2026.04.18', text:'산책하면서 사진 찍은 것을 기록하는 어플은 이미 많잖아.', tag:'고민중' },
+  { date:'2026.04.15', text:'내가 뭘 좋아하더라. 사진 찍는 것. 기록하는 것. 산책하는 것. 이 세 가지를 합쳐볼까.', tag:'시작' },
 ];
 
-const DP=[{id:'daily',name:'오늘의 빙고',items:[
-  {id:'r1',label:'내가 가장 행복할 때의 얼굴',req:true},
-  {id:'r2',label:'나의 발',req:true},
-  {id:'r3',label:'나의 뒷모습',req:true},
-  {id:'r4',label:'누워서 바라본 하늘 또는 천장',req:true},
-  {id:'o1',label:'타인의 뒷모습',req:false},
-  {id:'o2',label:'타인의 손',req:false},
-  {id:'o3',label:'빈 의자',req:false},
-  {id:'o4',label:'다 마신 잔',req:false},
-  {id:'o5',label:'두 사람의 뒷모습',req:false},
-  {id:'o6',label:'바위 틈새에서 찾은 초록',req:false},
-  {id:'o7',label:'가장 마음에 드는 나뭇잎의 잎맥',req:false},
-  {id:'o8',label:'우연히 발견한 하트',req:false},
-  {id:'o9',label:'구름',req:false},
-  {id:'o10',label:'내 그림자',req:false},
-  {id:'o11',label:'나에게 의미 있는 숫자',req:false},
-  {id:'o12',label:'나를 웃게 만든 문장',req:false},
-  {id:'o13',label:"내가 고른 '오늘의 질감'",req:false},
-  {id:'o14',label:"타인에게 받은 '응원합니다' 메시지",req:false},
-  {id:'o15',label:'가장 작은 생명',req:false},
-  {id:'o16',label:"아무거나 '곡선'",req:false},
-  {id:'o17',label:'단단하게 뿌리 내린 것',req:false},
-  {id:'o18',label:'창틀에 걸린 하늘',req:false},
-  {id:'o19',label:'정돈된 신발',req:false},
-  {id:'o20',label:'열려있는 문',req:false},
-  {id:'o21',label:'손바닥 위의 돌이나 낙엽',req:false},
-  {id:'o22',label:"색깔 '아무거나'",req:false},
-  {id:'o23',label:'낯선 사람에게 V 요청해서 찍기',req:false},
-  {id:'o24',label:'이름 초성이 겹치는 사람과 이름표 사진',req:false},
-  {id:'o25',label:'내가 착용한 것 중 가장 오래된 것',req:false},
-  {id:'o26',label:'이 자리에서 보이는 가장 먼 곳',req:false},
-  {id:'o27',label:'오늘 가장 많이 들여다본 화면',req:false},
-  {id:'o28',label:'나를 설명하는 물건 하나를 손바닥에 올려놓고',req:false},
-  {id:'o29',label:'나만 알아볼 수 있는 메모나 낙서',req:false},
-  {id:'o30',label:'오늘 처음 먹거나 마신 것의 흔적',req:false},
-  {id:'o31',label:'지금 가장 편한 자세로 찍은 셀카',req:false},
-  {id:'o32',label:'빛이 만들어낸 무늬나 그림자',req:false},
-  {id:'o33',label:'사람 손이 닿아 반질반질해진 것',req:false},
-  {id:'o34',label:'두 가지 색이 만나는 경계선',req:false},
-  {id:'o35',label:'시간의 흔적이 보이는 것',req:false},
-  {id:'o36',label:'혼자 피어 있는 꽃 한 송이',req:false},
-  {id:'o37',label:'예상치 못한 곳에서 발견한 글자',req:false},
-  {id:'o38',label:'쌍을 잃어버린 것',req:false},
-  {id:'o39',label:'무언가를 기다리는 듯한 장면',req:false},
-  {id:'o40',label:'같은 것이 반복되는 패턴',req:false},
-  {id:'o41',label:'지금 창문 너머로 보이는 것',req:false},
-  {id:'o42',label:'천천히 움직이는 것',req:false},
-  {id:'o43',label:'가장 가까운 것과 가장 먼 것을 한 프레임에',req:false},
-  {id:'o44',label:'지금 이 공간에서 가장 조용해 보이는 것',req:false},
-  {id:'o45',label:'눈을 감고 찍은 셀카',req:false},
-]}];
-
-let S={
-  screen:'welcome',name:'',
-  pools:DP,poolId:'daily',size:5,
-  board:[],boardSent:false,
-  pw:'admin1234',
-  editPid:null,loginErr:'',pwMsg:'',
-  selCell:null,dlding:false,
-  showShare:false,showEndPopup:false,
-  diaryExpanded:3,diaryLoggedIn:false,
-  diaryFrom:'welcome',diary:null,
-};
-
-function lg(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch{return null;}}
-function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
-function sc(){ls(KC,{pools:S.pools,poolId:S.poolId,size:S.size,pw:S.pw,name:S.name});}
-function sbrd(){ls(KB,{board:S.board,boardSent:S.boardSent});}
-function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
-function fmt(iso){const d=new Date(iso),p=n=>('0'+n).slice(-2);return`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-/* ── 일지 로드/저장 ── */
 function loadDiary(){try{const r=localStorage.getItem(KD);return r?JSON.parse(r):[...DD];}catch{return[...DD];}}
 function saveDiary(entries){try{localStorage.setItem(KD,JSON.stringify(entries));}catch{}}
-
 function checkDiaryPw(){
   const v=document.getElementById('diary-pw')?.value||'';
   if(v===S.pw){S.diaryLoggedIn=true;render();}
-  else{
-    const el=document.getElementById('diary-pw-err');
-    if(el)el.textContent='비밀번호가 틀렸어요.';
-    const inp=document.getElementById('diary-pw');
-    if(inp)inp.value='';
-  }
+  else{const el=document.getElementById('diary-pw-err');if(el)el.textContent='비밀번호가 틀렸어요.';const inp=document.getElementById('diary-pw');if(inp)inp.value='';}
 }
-
 function submitDiaryEntry(){
   const text=document.getElementById('diary-text-input')?.value?.trim();
   if(!text)return;
@@ -144,31 +75,104 @@ function submitDiaryEntry(){
   const today=new Date();
   const ds=`${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
   S.diary.unshift({date:ds,text,tag});
-  saveDiary(S.diary);
-  S.diaryExpanded=3;
-  render();
-  setTimeout(()=>{
-    const t=document.getElementById('diary-save-toast');
-    if(t){t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}
-  },50);
+  saveDiary(S.diary);S.diaryExpanded=3;render();
+  setTimeout(()=>{const t=document.getElementById('diary-save-toast');if(t){t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}},50);
 }
-
 function copyShareLink(){
   const url=window.location.href;
-  navigator.clipboard.writeText(url).catch(()=>{
-    const ta=document.createElement('textarea');ta.value=url;
-    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-  }).finally(()=>{
-    const t=document.getElementById('cp-toast');
-    if(t){t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}
-  });
+  navigator.clipboard.writeText(url).catch(()=>{const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}).finally(()=>{const t=document.getElementById('cp-toast');if(t){t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2200);}});
 }
 
-function handleEndBingo(){
-  const bl=bgs(S.board,S.size);
-  if(bl.length===0){S.showEndPopup=true;render();}
-  else{doShare(false);}
-}
+const DP=[{id:'daily',name:'오늘의 빙고',items:[
+  // 필수
+  {id:'r1',label:'나의 발',req:true},
+  {id:'r2',label:'나의 뒷모습',req:true},
+  {id:'r3',label:'누워서 바라본 하늘 또는 천장',req:true},
+  // 자기 자신
+  {id:'a1',label:'지금 이 순간의 셀카',req:false},
+  {id:'a2',label:'눈을 감고 찍은 셀카',req:false},
+  {id:'a3',label:'내 그림자',req:false},
+  {id:'a4',label:'주먹 불끈 쥔 내 손',req:false},
+  {id:'a5',label:'내가 가장 좋아하는 색',req:false},
+  // 타인·관계
+  {id:'b1',label:'타인의 뒷모습',req:false},
+  {id:'b2',label:'타인의 손',req:false},
+  {id:'b3',label:'두 사람의 뒷모습',req:false},
+  {id:'b4',label:'v포즈한 다른 사람',req:false},
+  {id:'b5',label:'다른 사람과 악수하면서',req:false},
+  // 사물·공간
+  {id:'c1',label:'빈 의자',req:false},
+  {id:'c2',label:'다 마신 잔',req:false},
+  {id:'c3',label:'길들여져서 편안한 물건',req:false},
+  {id:'c4',label:'구겨진 영수증',req:false},
+  {id:'c5',label:'매일 사용하는 칫솔',req:false},
+  {id:'c6',label:'정돈된 신발',req:false},
+  {id:'c7',label:'정돈되어 있는 무언가',req:false},
+  {id:'c8',label:'손바닥 위의 돌이나 낙엽',req:false},
+  {id:'c9',label:'열려있는 문',req:false},
+  {id:'c10',label:"무엇이든 '이정표'",req:false},
+  // 자연
+  {id:'d1',label:'구름',req:false},
+  {id:'d2',label:'혼자 피어 있는 꽃 한 송이',req:false},
+  {id:'d3',label:'바위 틈새에서 찾은 초록',req:false},
+  {id:'d4',label:'나뭇잎의 잎맥',req:false},
+  {id:'d5',label:'가장 작은 생명',req:false},
+  {id:'d6',label:'천천히 움직이는 것',req:false},
+  // 빛·형태·질감
+  {id:'e1',label:'틈새의 빛',req:false},
+  {id:'e2',label:'울퉁불퉁한 질감',req:false},
+  {id:'e3',label:"아무거나 '곡선'",req:false},
+  {id:'e4',label:'대각선',req:false},
+  {id:'e5',label:'직선과 곡선을 한 프레임에',req:false},
+  {id:'e6',label:'반복되는 패턴',req:false},
+  {id:'e7',label:'복잡하게 엉킨 것',req:false},
+  {id:'e8',label:'두 가지 색이 만나는 경계선',req:false},
+  {id:'e9',label:"색깔 '아무거나'",req:false},
+  {id:'e10',label:'우연히 발견한 하트',req:false},
+  {id:'e11',label:'뾰족한 것',req:false},
+  {id:'e12',label:'짝이 있는 것',req:false},
+  {id:'e13',label:'가장 작은 동그라미를 찾아서',req:false},
+  // 시간·장면
+  {id:'f1',label:'지금 창문 너머로 보이는 것',req:false},
+  {id:'f2',label:'창틀에 걸린 하늘',req:false},
+  {id:'f3',label:'시간의 흔적이 보이는 것',req:false},
+  {id:'f4',label:'예상치 못한 곳에서 발견한 글자',req:false},
+  {id:'f5',label:'나를 웃게 만든 문장',req:false},
+  // 숫자
+  {id:'g1',label:'나에게 의미 있는 숫자',req:false},
+  {id:'g2',label:'세자리 숫자 아무거나',req:false},
+  {id:'g3',label:'연속되는 숫자 두 자리',req:false},
+  {id:'g4',label:'지금 몇 시인지 찰칵!',req:false},
+  // 일상·감각
+  {id:'h1',label:'오늘의 밥',req:false},
+  {id:'h2',label:'바닥에 앉아서 찍은 아무거나',req:false},
+  {id:'h3',label:"'쉼'을 상징하는 것",req:false},
+  {id:'h4',label:"'연결'을 상징하는 것",req:false},
+  {id:'h5',label:"단단해 보이는 '무언가'",req:false},
+]}];
+
+let S={
+  screen:'welcome',name:'',
+  pools:DP,poolId:'daily',size:5,
+  board:[],boardSent:false,boardStartDate:null,
+  recentIds:[],
+  pw:'admin1234',editPid:null,loginErr:'',pwMsg:'',
+  selCell:null,dlding:false,zoom:1,
+  showShare:false,
+  diaryExpanded:3,
+  diaryLoggedIn:false,
+  diaryFrom:'welcome',
+  diary:null,
+};
+
+function lg(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch{return null;}}
+function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+function sc(){ls(KC,{pools:S.pools,poolId:S.poolId,size:S.size,pw:S.pw,name:S.name,recentIds:S.recentIds});}
+function sbrd(){ls(KB,{board:S.board,boardSent:S.boardSent,boardStartDate:S.boardStartDate});}
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
+function fmt(iso){const d=new Date(iso),p=n=>('0'+n).slice(-2);return`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function fmtStart(iso){const d=new Date(iso);return`${d.getMonth()+1}월 ${d.getDate()}일`;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 async function cimg(file,mx=500){return new Promise(r=>{
   const img=new Image(),u=URL.createObjectURL(file);
@@ -183,7 +187,7 @@ async function cimg(file,mx=500){return new Promise(r=>{
 function bgs(board,sz){
   const ok=i=>!!board[i]?.photo,r=[];
   for(let i=0;i<sz;i++){const row=Array.from({length:sz},(_,c)=>i*sz+c);if(row.every(ok))r.push(row);}
-  for(let c=0;c<sz;c++){const col=Array.from({length:sz},(_,i)=>i*sz+c);if(col.every(ok))r.push(col);}
+  for(let c=0;c<sz;c++){const col=Array.from({length:sz},(_,r2)=>r2*sz+c);if(col.every(ok))r.push(col);}
   const d1=Array.from({length:sz},(_,i)=>i*sz+i),d2=Array.from({length:sz},(_,i)=>i*sz+(sz-1-i));
   if(d1.every(ok))r.push(d1);if(d2.every(ok))r.push(d2);return r;
 }
@@ -195,39 +199,33 @@ function rr(ctx,x,y,w,h,r){
   ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
 }
 
-function isAdj(a,b,sz){
-  const ra=0|a/sz,ca=a%sz,rb=0|b/sz,cb=b%sz;
-  return Math.abs(ra-rb)<=1&&Math.abs(ca-cb)<=1;
-}
-function spreadPos(count,sz){
-  const all=Array.from({length:sz*sz},(_,i)=>i);
-  for(let t=0;t<500;t++){
-    const s=shuf(all),chosen=[];
-    for(const pos of s){if(chosen.every(p=>!isAdj(p,pos,sz))){chosen.push(pos);if(chosen.length===count)return chosen;}}
-  }
-  return shuf(all).slice(0,count);
-}
-
+// 최근 사용 항목 피해서 랜덤 추출
 function mkBoard(){
   const pool=S.pools.find(p=>p.id===S.poolId);
   if(!pool)return false;
   const need=S.size*S.size;
   const req=pool.items.filter(i=>i.req);
-  const opt=shuf(pool.items.filter(i=>!i.req));
+  const opt=pool.items.filter(i=>!i.req);
   if(req.length>need)return false;
-  const fill=opt.slice(0,need-req.length);
-  if(req.length+fill.length<need)return false;
-  const reqPos=spreadPos(req.length,S.size);
-  const board=new Array(need).fill(null);
-  shuf(req).forEach((it,i)=>{board[reqPos[i]]=it;});
-  const optPos=Array.from({length:need},(_,i)=>i).filter(i=>!reqPos.includes(i));
-  shuf(fill).forEach((it,i)=>{board[optPos[i]]=it;});
-  S.board=board.map(it=>({...it,photo:null}));
-  S.boardSent=false;sbrd();return true;
+  if(req.length+opt.length<need)return false;
+
+  // 최근 사용 항목을 뒤로 밀어서 겹침 최소화
+  const recent=new Set(S.recentIds||[]);
+  const fresh=shuf(opt.filter(i=>!recent.has(i.id)));
+  const stale=shuf(opt.filter(i=>recent.has(i.id)));
+  const ordered=[...fresh,...stale];
+  const fill=ordered.slice(0,need-req.length);
+
+  S.board=shuf([...req,...fill]).map(it=>({...it,photo:null}));
+  // 이번 판 사용 ID 기록 (최대 50개 유지)
+  const used=S.board.map(it=>it.id);
+  S.recentIds=[...new Set([...used,...(S.recentIds||[])])].slice(0,50);
+  S.boardSent=false;S.boardStartDate=new Date().toISOString();
+  sbrd();sc();return true;
 }
 
 async function genImg(){
-  const sz=S.size,CS=120,G=3,P=12,HDR=70;
+  const sz=S.size,CS=160,G=5,P=16,HDR=100;
   const W=sz*CS+(sz-1)*G+P*2,TH=sz*CS+(sz-1)*G+P*2+HDR,SC=2;
   const cv=document.createElement('canvas');cv.width=W*SC;cv.height=TH*SC;
   const ctx=cv.getContext('2d');ctx.scale(SC,SC);
@@ -235,11 +233,13 @@ async function genImg(){
   const pc=S.board.filter(c=>c?.photo).length;
   const pool=S.pools.find(p=>p.id===S.poolId);
   ctx.fillStyle='#eaf2fb';ctx.fillRect(0,0,W,TH);
-  ctx.fillStyle='#1a3a6e';ctx.font='bold 17px sans-serif';ctx.textAlign='center';
-  ctx.fillText(`${S.name}님의 빙고`,W/2,26);
-  ctx.fillStyle='#3b6fc4';ctx.font='11px sans-serif';ctx.fillText(pool?.name||'빙고',W/2,42);
-  ctx.fillStyle='#9ca3af';ctx.font='10px sans-serif';
-  ctx.fillText(`${pc}/${sz*sz} 완성 · 빙고 ${bl.length}개 · ${new Date().toLocaleDateString('ko-KR')}`,W/2,58);
+  await document.fonts.ready;
+  ctx.fillStyle='#1a3a6e';ctx.font='bold 25px "Gowun Dodum",serif';ctx.textAlign='center';
+  ctx.fillText(`${S.name}님의 빙고`,W/2,34);
+  ctx.fillStyle='#3b6fc4';ctx.font='15px "Gowun Dodum",serif';
+  ctx.fillText(pool?.name||'빙고',W/2,58);
+  ctx.fillStyle='#93c5fd';ctx.font='13px "Gowun Dodum",serif';
+  ctx.fillText(`${pc}/${sz*sz} 완성  ·  빙고 ${bl.length}개  ·  ${new Date().toLocaleDateString('ko-KR')}`,W/2,80);
   const imgs={};
   await Promise.all(S.board.map((c,i)=>{
     if(!c?.photo)return;
@@ -248,62 +248,61 @@ async function genImg(){
   for(let i=0;i<S.board.length;i++){
     const rv=0|i/sz,cv2=i%sz,x=P+cv2*(CS+G),y=P+HDR+rv*(CS+G);
     const cell=S.board[i],bin=bs.has(i);
-    ctx.save();rr(ctx,x,y,CS,CS,7);
-    ctx.fillStyle=bin?'#c8dff4':'#fff';ctx.fill();
-    ctx.strokeStyle=bin?'#3b6fc4':'#dde8f5';ctx.lineWidth=bin?2:1;ctx.stroke();ctx.restore();
+    ctx.save();rr(ctx,x,y,CS,CS,8);
+    ctx.fillStyle=bin?'#bfdbfe':cell?.req?'#eff6ff':'#fff';ctx.fill();
+    ctx.strokeStyle=bin?'#3b6fc4':cell?.req?'#bfdbfe':'#dbeafe';ctx.lineWidth=bin?4:1;ctx.stroke();ctx.restore();
     if(imgs[i]){
-      const im=imgs[i];
-      ctx.save();rr(ctx,x+3,y+3,CS-6,CS-6,5);ctx.clip();
-      const s=Math.max((CS-6)/im.width,(CS-6)/im.height);
-      ctx.drawImage(im,x+3+(CS-6-im.width*s)/2,y+3+(CS-6-im.height*s)/2,im.width*s,im.height*s);ctx.restore();
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(x+3,y+3,CS-6,18);
-      ctx.fillStyle='#fff';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.fillText(cell?.label||'',x+CS/2,y+15);
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(x+3,y+CS-20,CS-6,17);
-      ctx.fillStyle='#fff';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText(fmt(cell.photo.date),x+CS/2,y+CS-8);
-      if(bin){ctx.fillStyle='rgba(59,111,196,.2)';ctx.fillRect(x+3,y+3,CS-6,CS-6);}
+      const im=imgs[i];const pad=4,inner=CS-pad*2;
+      ctx.save();rr(ctx,x+pad,y+pad,inner,inner,5);ctx.clip();
+      const s=Math.max(inner/im.width,inner/im.height);
+      ctx.drawImage(im,x+pad+(inner-im.width*s)/2,y+pad+(inner-im.height*s)/2,im.width*s,im.height*s);ctx.restore();
+      const lh=32;
+      ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(x+pad,y+pad,inner,lh);
+      ctx.fillStyle='#fff';ctx.font='bold 14px "Noto Sans KR",sans-serif';ctx.textAlign='center';
+      const lbl=cell?.label||'';
+      ctx.fillText(lbl.length>13?lbl.slice(0,12)+'…':lbl,x+pad+inner/2,y+pad+lh/2+5);
+      const dh=24;
+      ctx.fillStyle='rgba(0,0,0,.52)';ctx.fillRect(x+pad,y+pad+inner-dh,inner,dh);
+      ctx.fillStyle='#e5e7eb';ctx.font='11px monospace';ctx.textAlign='center';
+      ctx.fillText(fmt(cell.photo.date),x+pad+inner/2,y+pad+inner-dh/2+4);
+      if(bin){ctx.fillStyle='rgba(59,111,196,.18)';ctx.fillRect(x+pad,y+pad,inner,inner);}
     }else{
-      if(cell?.req){ctx.fillStyle='rgba(59,111,196,.08)';rr(ctx,x,y,CS,CS,7);ctx.fill();}
-      ctx.fillStyle='#e5e7eb';rr(ctx,x+CS/2-18,y+CS/2-24,36,24,5);ctx.fill();
-      ctx.fillStyle=cell?.req?'#1a3a6e':'#9ca3af';ctx.font='8px sans-serif';ctx.textAlign='center';
-      const lbl=cell?.label||'',ws=lbl.split(' '),ln=[''];
-      for(const w of ws){const l=ln[ln.length-1];if((l+w).length<=8)ln[ln.length-1]=(l?l+' ':'')+w;else ln.push(w);}
-      ln.forEach((l,li)=>ctx.fillText(l,x+CS/2,y+CS/2+6+li*11));
+      const lineH=17,lbl=cell?.label||'',ws=lbl.split(' '),ln=[''];
+      for(const w of ws){const l=ln[ln.length-1];if((l+w).length<=9)ln[ln.length-1]=(l?l+' ':'')+w;else ln.push(w);}
+      const totalH=ln.length*lineH+(cell?.req?20:0);
+      const startY=y+(CS-totalH)/2+lineH/2;
+      if(cell?.req){ctx.fillStyle='#3b82f6';ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.fillText('★',x+CS/2,startY);}
+      ctx.fillStyle='#1e3a8a';ctx.font='bold 14px "Noto Sans KR",sans-serif';ctx.textAlign='center';
+      const textStartY=cell?.req?startY+20:startY;
+      ln.forEach((l,li)=>ctx.fillText(l,x+CS/2,textStartY+li*lineH));
     }
   }
   return cv.toDataURL('image/png');
 }
 
-async function doShare(download){
-  S.dlding=true;render();
-  try{
-    const dataUrl=await genImg();
-    const ds=new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').replace(/-$/,'');
-    const fname=`빙고_${S.name}_${ds}.png`;
-    if(!download&&navigator.canShare){
-      try{
-        const blob=await(await fetch(dataUrl)).blob();
-        const file=new File([blob],fname,{type:'image/png'});
-        if(navigator.canShare({files:[file]})){
-          await navigator.share({title:`${S.name}님의 빙고 완성!`,files:[file]});
-          S.boardSent=true;sbrd();render();return;
-        }
-      }catch(e){if(e.name==='AbortError'){S.dlding=false;render();return;}}
-    }
-    const a=document.createElement('a');a.download=fname;a.href=dataUrl;a.click();
-    S.boardSent=true;sbrd();render();
-  }finally{S.dlding=false;render();}
-}
-
-async function dlMid(){
+async function doSave(){
   S.dlding=true;render();
   try{
     const dataUrl=await genImg();
     const ds=new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').replace(/-$/,'');
     const a=document.createElement('a');a.download=`빙고_${S.name}_${ds}.png`;a.href=dataUrl;a.click();
+    S.boardSent=true;sbrd();
   }finally{S.dlding=false;render();}
 }
 
-/* ── Render ── */
+function showPopup(){
+  const p=document.getElementById('popup');p.style.display='block';
+  p.innerHTML=`<div class="popup-overlay"><div class="popup-box">
+    <div class="popup-title">이번 탐험은 여기서 완료할까요?</div>
+    <div class="popup-sub">아직 빙고가 완성되지 않았어요.<br>그래도 지금까지의 기록을 저장할게요.</div>
+    <div class="popup-btns">
+      <button class="popup-cancel" onclick="closePopup()">계속 탐험하기</button>
+      <button class="popup-ok" onclick="closePopup();SD()">저장하고 종료</button>
+    </div>
+  </div></div>`;
+}
+function closePopup(){document.getElementById('popup').style.display='none';}
+
 function render(){
   const app=document.getElementById('app');
   if(S.screen==='welcome')app.innerHTML=welcomeH();
@@ -313,157 +312,42 @@ function render(){
   else app.innerHTML=userH();
 }
 
-/* ── 웰컴 화면 ── */
-function welcomeH(){return`
-<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;position:relative">
-  <button onclick="S.screen='diary';S.diaryFrom='welcome';S.diaryExpanded=3;S.diaryLoggedIn=false;render()" style="position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;cursor:pointer;font-size:22px;color:#9ca3af;padding:4px">⚙</button>
-  <div style="text-align:center;margin-bottom:2.5rem">
-    <div style="width:64px;height:64px;background:#dbeeff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:28px">🌿</div>
-    <h1 style="font-size:26px;font-weight:500;color:#1a3a6e;margin-bottom:.5rem">오늘의 빙고</h1>
-    <p style="font-size:14px;color:#6b7280;line-height:1.7">주변을 천천히 들여다보는<br>작은 미션들을 완성해보세요</p>
-  </div>
-  <div style="width:100%;max-width:300px">
-    <p style="font-size:15px;font-weight:500;color:#374151;text-align:center;margin-bottom:.75rem">어떻게 불러드릴까요?</p>
-    <input type="text" id="uname" placeholder="이름을 입력해주세요" value="${esc(S.name)}"
-      style="text-align:center;font-size:16px;padding:12px;margin-bottom:1rem"
-      onkeydown="if(event.key==='Enter')startBingo()">
-    <button onclick="startBingo()" class="bp" style="width:100%;padding:14px;font-size:16px;border-radius:12px">
-      시작할까요?
-    </button>
-  </div>
-</div>`;}
-
-/* ── 로그인 화면 ── */
-function loginH(){return`
-<div style="padding:2rem 1rem;display:flex;justify-content:center">
-<div class="card" style="max-width:340px;width:100%;text-align:center;padding:2rem">
-  <div style="font-size:36px;margin-bottom:.75rem">🔒</div>
-  <h2 style="margin:0 0 1.25rem;font-size:18px;font-weight:500">관리자 로그인</h2>
-  <input type="password" id="lpw" placeholder="비밀번호" style="text-align:center;margin-bottom:.5rem" onkeydown="if(event.key==='Enter')AL()">
-  ${S.loginErr?`<p style="color:#ef4444;font-size:13px;margin:0 0 10px">${esc(S.loginErr)}</p>`:''}
-  <button class="bp" style="width:100%;padding:11px;margin-bottom:8px;font-size:15px" onclick="AL()">로그인</button>
-  <button class="bg" style="width:100%" onclick="S.screen=S.board.length>0?'user':'welcome';S.loginErr='';render()">돌아가기</button>
-</div></div>`;}
-
-/* ── 관리자 화면 ── */
-function adminH(){
-  const mn=S.size*S.size;
-  const poolSel=S.pools.map(p=>{
-    const act=p.id===S.poolId,reqN=p.items.filter(i=>i.req).length,lack=p.items.length<mn;
-    return`<button onclick="SP('${p.id}')" style="text-align:left;padding:10px 14px;border:${act?'2px solid #3b6fc4':'1px solid #dde8f5'};border-radius:8px;background:${act?'#eaf2fb':'#fff'};cursor:${lack&&!act?'not-allowed':'pointer'};display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:6px;opacity:${lack&&!act?'0.55':'1'}">
-      <span style="font-weight:500;color:${act?'#1a3a6e':'#374151'}">${act?'✓ ':''}${esc(p.name)}</span>
-      <span style="font-size:11px;color:${lack?'#ef4444':'#9ca3af'}">${p.items.length}개 · 필수 ${reqN}${lack?` · 최소 ${mn}개 필요`:''}</span>
-    </button>`;
-  }).join('');
-  const poolMgr=S.pools.map(pool=>{
-    const exp=S.editPid===pool.id,reqN=pool.items.filter(i=>i.req).length;
-    const tags=pool.items.map(it=>`
-      <span class="tag">
-        <button onclick="TR('${pool.id}','${it.id}')" style="background:${it.req?'#3b6fc4':'#e5e7eb'};color:${it.req?'#fff':'#9ca3af'};border:none;border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;line-height:1.5;font-weight:500;margin-right:1px">${it.req?'필수':'선택'}</button>${esc(it.label)}<button onclick="DI('${pool.id}','${it.id}')" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:14px;line-height:1;padding:0;margin-left:2px">×</button>
-      </span>`).join('');
-    return`<div style="border:1px solid #dde8f5;border-radius:8px;margin-bottom:8px;overflow:hidden">
-      <div onclick="TP('${pool.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f9fafb;cursor:pointer">
-        <span style="font-weight:500;font-size:14px">${esc(pool.name)}</span>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:11px;color:#9ca3af">${pool.items.length}개</span>
-          ${reqN>0?`<span style="font-size:11px;background:#eaf2fb;color:#1a3a6e;border-radius:4px;padding:1px 6px">필수 ${reqN}</span>`:''}
-          ${S.pools.length>1?`<button onclick="event.stopPropagation();DP2('${pool.id}')" style="color:#ef4444;background:none;border:none;cursor:pointer;padding:0;font-size:14px">×</button>`:''}
-          <span style="font-size:12px;color:#9ca3af">${exp?'▲':'▼'}</span>
-        </div>
-      </div>
-      ${exp?`<div style="padding:12px 14px;border-top:1px solid #dde8f5">
-        <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">버튼으로 필수/선택 전환 · 필수 항목은 서로 떨어져 배치돼요</p>
-        <div style="display:flex;gap:8px;margin-bottom:.75rem">
-          <input type="text" id="ni_${pool.id}" placeholder="새 미션 입력 후 Enter" onkeydown="if(event.key==='Enter')AI('${pool.id}')" style="flex:1;font-size:13px">
-          <button class="bp" onclick="AI('${pool.id}')">추가</button>
-        </div>
-        ${pool.items.length===0?`<p style="color:#9ca3af;font-size:12px;text-align:center;margin:.5rem 0">미션을 추가해주세요</p>`:''}
-        <div style="display:flex;flex-wrap:wrap;margin-top:4px">${tags}</div>
-      </div>`:''}
-    </div>`;
-  }).join('');
-  return`<div style="padding:1rem">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <h2 style="font-size:17px;font-weight:500">⚙ 관리자 설정</h2>
-      <button class="bg" onclick="S.screen=S.board.length>0?'user':'welcome';render()">나가기</button>
-    </div>
-    <div class="card">
-      <p style="margin-bottom:10px;font-weight:500;font-size:13px;color:#6b7280">빙고판 크기</p>
-      <div style="display:flex;gap:8px">
-        <button onclick="SS(4)" style="flex:1;padding:10px;border:${S.size===4?'2px solid #3b6fc4':'1px solid #dde8f5'};border-radius:8px;background:${S.size===4?'#eaf2fb':'#fff'};font-weight:500;cursor:pointer;font-size:18px;color:${S.size===4?'#1a3a6e':'#374151'}">4×4</button>
-        <button onclick="SS(5)" style="flex:1;padding:10px;border:${S.size===5?'2px solid #3b6fc4':'1px solid #dde8f5'};border-radius:8px;background:${S.size===5?'#eaf2fb':'#fff'};font-weight:500;cursor:pointer;font-size:18px;color:${S.size===5?'#1a3a6e':'#374151'}">5×5</button>
-      </div>
-    </div>
-    <div class="card">
-      <p style="margin-bottom:10px;font-weight:500;font-size:13px;color:#6b7280">활성 단어 풀</p>${poolSel}
-    </div>
-    <div class="card">
-      <p style="margin-bottom:10px;font-weight:500;font-size:13px;color:#6b7280">미션 풀 관리</p>
-      <div style="display:flex;gap:8px;margin-bottom:.75rem">
-        <input type="text" id="npn" placeholder="새 풀 이름" onkeydown="if(event.key==='Enter')AP()">
-        <button class="bp" onclick="AP()">추가</button>
-      </div>${poolMgr}
-    </div>
-    <div class="card">
-      <p style="margin-bottom:10px;font-weight:500;font-size:13px;color:#6b7280">비밀번호 변경</p>
-      <div style="display:flex;gap:8px">
-        <input type="password" id="npw" placeholder="새 비밀번호 (4자 이상)" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')CP()">
-        <button class="bg" onclick="CP()">변경</button>
-      </div>
-      ${S.pwMsg?`<p style="margin:6px 0 0;font-size:12px;color:${S.pwMsg==='변경 완료'?'#3b6fc4':'#ef4444'}">${esc(S.pwMsg)}</p>`:''}
-    </div>
-    <button class="bp" onclick="mkBoard();S.screen='welcome';render()" style="width:100%;padding:13px;font-size:14px;border-radius:12px">
-      ✓ 설정 저장
-    </button>
-  </div>`;}
-
-/* ── 개발 일지 화면 ── */
 function diaryH(){
   const entries=S.diary||[];
   const shown=entries.slice(0,S.diaryExpanded);
   const remaining=entries.length-S.diaryExpanded;
-
   const entriesHtml=shown.map(e=>`
     <div style="border-left:2.5px solid #b5d4f4;padding:8px 10px 8px 11px;margin-bottom:9px;background:#f5f9fd;border-radius:0 7px 7px 0">
       <div style="font-size:10px;color:#3b6fc4;margin-bottom:3px;font-weight:500">${esc(e.date)}</div>
       <div style="font-size:12px;color:#1a2a40;line-height:1.65">${esc(e.text)}</div>
       ${e.tag?`<span style="display:inline-block;background:#eaf2fb;color:#1a3a6e;font-size:9px;padding:2px 8px;border-radius:10px;margin-top:6px;border:0.5px solid #b5d4f4;font-weight:500">${esc(e.tag)}</span>`:''}
     </div>`).join('');
-
-  const moreBtn=remaining>0
-    ?`<button onclick="S.diaryExpanded=S.diaryExpanded+3;render()" style="width:100%;background:#eaf2fb;color:#3b6fc4;border:none;border-radius:8px;padding:9px;font-size:11px;font-weight:500;cursor:pointer;margin-bottom:10px;font-family:inherit">▼&nbsp; 이전 일지 더 보기 (${Math.min(remaining,3)}개 더)</button>`
-    :'';
-
-  const adminSection=S.diaryLoggedIn
-    ?`<div style="border-top:0.5px solid #dde8f5;padding-top:12px;margin-top:4px">
-        <p style="font-size:11px;font-weight:500;color:#4a6080;margin-bottom:5px">새 일지 작성</p>
-        <textarea id="diary-text-input" rows="4" placeholder="오늘 개발하면서 들었던 생각을 기록해요..." style="width:100%;background:#f4f8fd;border:0.5px solid #dde8f5;border-radius:7px;padding:8px 10px;font-size:11.5px;color:#1a2a40;font-family:inherit;resize:none;outline:none;margin-bottom:7px;line-height:1.6"></textarea>
-        <p style="font-size:11px;font-weight:500;color:#4a6080;margin-bottom:5px">태그 (선택)</p>
-        <input id="diary-tag-input" type="text" placeholder="예: v1.1, UI 개선, 고민중" style="background:#f4f8fd;border:0.5px solid #dde8f5;border-radius:7px;padding:7px 10px;font-size:11.5px;color:#1a2a40;font-family:inherit;outline:none;margin-bottom:9px">
-        <button onclick="submitDiaryEntry()" style="width:100%;background:#3b6fc4;color:#fff;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">일지 저장하기</button>
-        <div id="diary-save-toast" style="font-size:10px;color:#4caf50;text-align:center;margin-top:6px;opacity:0;transition:opacity 0.3s;font-weight:500">✓ 일지가 저장됐어요!</div>
-        <div style="height:0.5px;background:#dde8f5;margin:12px 0 10px"></div>
-        <button onclick="S.screen='admin';S.editPid=null;render()" style="width:100%;background:#f4f8fd;color:#4a6080;border:0.5px solid #dde8f5;border-radius:7px;padding:8px;font-size:11px;cursor:pointer;font-family:inherit">⚙ 관리자 설정으로 이동</button>
-      </div>`
-    :`<p style="font-size:11px;color:#8aa4c0;text-align:center;margin-bottom:9px">🔒 관리자 전용 — 에디만 진입 가능</p>
-      <div style="display:flex;gap:7px">
-        <input type="password" id="diary-pw" placeholder="비밀번호 입력" autocomplete="off"
-          style="flex:1;background:#f4f8fd;border:0.5px solid #dde8f5;border-radius:7px;padding:8px 10px;font-size:12px;color:#1a2a40;outline:none;font-family:inherit"
-          onkeydown="if(event.key==='Enter')checkDiaryPw()">
-        <button onclick="checkDiaryPw()" style="background:#1a3a6e;color:#fff;border:none;border-radius:7px;padding:8px 13px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">확인</button>
-      </div>
-      <div id="diary-pw-err" style="font-size:10px;color:#ef4444;text-align:center;margin-top:6px;min-height:14px"></div>`;
-
+  const moreBtn=remaining>0?`<button onclick="S.diaryExpanded=S.diaryExpanded+3;render()" style="width:100%;background:#eaf2fb;color:#3b6fc4;border:none;border-radius:8px;padding:9px;font-size:11px;font-weight:500;cursor:pointer;margin-bottom:10px;font-family:inherit">▼&nbsp; 이전 일지 더 보기 (${Math.min(remaining,3)}개 더)</button>`:'';
+  const adminSection=S.diaryLoggedIn?`
+    <div style="border-top:0.5px solid #dde8f5;padding-top:12px;margin-top:4px">
+      <p style="font-size:11px;font-weight:500;color:#4a6080;margin-bottom:5px">새 일지 작성</p>
+      <textarea id="diary-text-input" rows="4" placeholder="오늘 개발하면서 들었던 생각을 기록해요..." style="width:100%;background:#f4f8fd;border:0.5px solid #dde8f5;border-radius:7px;padding:8px 10px;font-size:11.5px;color:#1a2a40;font-family:inherit;resize:none;outline:none;margin-bottom:7px;line-height:1.6"></textarea>
+      <p style="font-size:11px;font-weight:500;color:#4a6080;margin-bottom:5px">태그 (선택)</p>
+      <input id="diary-tag-input" type="text" placeholder="예: v1.1, UI 개선, 고민중" style="background:#f4f8fd;border:0.5px solid #dde8f5;border-radius:7px;padding:7px 10px;font-size:11.5px;color:#1a2a40;font-family:inherit;outline:none;margin-bottom:9px;width:100%">
+      <button onclick="submitDiaryEntry()" style="width:100%;background:#3b6fc4;color:#fff;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">일지 저장하기</button>
+      <div id="diary-save-toast" style="font-size:10px;color:#4caf50;text-align:center;margin-top:6px;opacity:0;transition:opacity 0.3s;font-weight:500">✓ 일지가 저장됐어요!</div>
+      <div style="height:0.5px;background:#dde8f5;margin:12px 0 10px"></div>
+      <button onclick="S.screen='admin';S.editPid=null;render()" style="width:100%;background:#f4f8fd;color:#4a6080;border:0.5px solid #dde8f5;border-radius:7px;padding:8px;font-size:11px;cursor:pointer;font-family:inherit">⚙ 관리자 설정으로 이동</button>
+    </div>`:`
+    <p style="font-size:11px;color:#8aa4c0;text-align:center;margin-bottom:9px">🔒 관리자 전용 — 에디만 진입 가능</p>
+    <div style="display:flex;gap:7px">
+      <input type="password" id="diary-pw" placeholder="비밀번호 입력" autocomplete="off"
+        style="flex:1;background:#f4f8fd;border:0.5px solid #dde8f5;border-radius:7px;padding:8px 10px;font-size:12px;color:#1a2a40;outline:none;font-family:inherit"
+        onkeydown="if(event.key==='Enter')checkDiaryPw()">
+      <button onclick="checkDiaryPw()" style="background:#1a3a6e;color:#fff;border:none;border-radius:7px;padding:8px 13px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">확인</button>
+    </div>
+    <div id="diary-pw-err" style="font-size:10px;color:#ef4444;text-align:center;margin-top:6px;min-height:14px"></div>`;
   return`<div style="min-height:100vh;background:#fff">
     <div style="background:#1a3a6e;padding:18px 16px 20px;text-align:center;position:relative">
       <button onclick="S.screen=S.diaryFrom;render()" style="position:absolute;top:14px;left:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.85);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">←</button>
       <div style="display:inline-block;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.92);font-size:10px;padding:3px 11px;border-radius:20px;margin-bottom:9px">탐험력 만랩 달성 🏅</div>
-      <div style="color:#fff;font-size:14px;font-weight:500;line-height:1.55;margin-bottom:5px">
-        여기까지 들어온 걸 보니<br>진짜 탐험가가 맞군요.
-      </div>
-      <div style="font-family:'Gowun Dodum',serif;color:rgba(255,255,255,0.68);font-size:11.5px;line-height:1.35">
-        관리자 모드는 에디만 접근 가능하지만,<br>그동안의 개발 일지는 특별히 공개할게요.
-      </div>
+      <div style="color:#fff;font-size:14px;font-weight:500;line-height:1.55;margin-bottom:5px">여기까지 들어온 걸 보니<br>진짜 탐험가가 맞군요.</div>
+      <div style="font-family:'Gowun Dodum',serif;color:rgba(255,255,255,0.68);font-size:11.5px;line-height:1.35">관리자 모드는 에디만 접근 가능하지만,<br>그동안의 개발 일지는 특별히 공개할게요.</div>
     </div>
     <div style="padding:14px 14px 20px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
@@ -473,100 +357,204 @@ function diaryH(){
       ${entriesHtml}
       ${moreBtn}
       <div style="height:0.5px;background:#dde8f5;margin:2px 0 10px"></div>
-      <div style="border:0.5px solid #dde8f5;border-radius:10px;padding:11px 13px;background:#fafcff">
-        ${adminSection}
-      </div>
+      <div style="border:0.5px solid #dde8f5;border-radius:10px;padding:11px 13px;background:#fafcff">${adminSection}</div>
     </div>
   </div>`;}
 
-/* ── 메인 빙고 화면 ── */
+function welcomeH(){return`
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;position:relative">
+  <button onclick="S.screen='diary';S.diaryFrom='welcome';S.diaryExpanded=3;S.diaryLoggedIn=false;render()" style="position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;cursor:pointer;font-size:22px;color:#93c5fd;padding:4px">⚙</button>
+  <div style="text-align:center;margin-bottom:2.5rem">
+    <div style="width:64px;height:64px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:28px">🌿</div>
+    <h1 style="font-size:26px;color:#1a3a6e;margin-bottom:.5rem">오늘의 빙고</h1>
+    <p style="font-size:14px;color:#3b6fc4;line-height:1.7">주변을 천천히 들여다보는<br>작은 미션들을 완성해보세요</p>
+  </div>
+  <div style="width:100%;max-width:300px">
+    <p style="font-size:15px;color:#1a3a6e;text-align:center;margin-bottom:.75rem">어떻게 불러드릴까요?</p>
+    <input type="text" id="uname" placeholder="이름을 입력해주세요" value="${esc(S.name)}"
+      style="text-align:center;font-size:16px;padding:12px;margin-bottom:1rem"
+      onkeydown="if(event.key==='Enter')startBingo()">
+    <button onclick="startBingo()" style="width:100%;background:#3b6fc4;color:#fff;border:none;border-radius:14px;padding:14px;font-size:16px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700;letter-spacing:1px">시작할까요?</button>
+    <p id="start-err" style="font-size:12px;color:#ef4444;text-align:center;margin-top:10px;line-height:1.5;font-family:'Gowun Dodum',serif"></p>
+  </div>
+</div>`;}
+
+function loginH(){return`
+<div style="padding:2rem 1rem;display:flex;justify-content:center">
+<div class="card" style="max-width:340px;width:100%;text-align:center;padding:2rem">
+  <div style="font-size:36px;margin-bottom:.75rem">🔒</div>
+  <h2 style="margin:0 0 1.25rem;font-size:18px;color:#1a3a6e">관리자 로그인</h2>
+  <input type="password" id="lpw" placeholder="비밀번호" style="text-align:center;margin-bottom:.5rem" onkeydown="if(event.key==='Enter')AL()">
+  ${S.loginErr?`<p style="color:#ef4444;font-size:13px;margin:0 0 10px">${esc(S.loginErr)}</p>`:''}
+  <button class="bp" style="width:100%;padding:11px;margin-bottom:8px;font-size:15px;font-family:'Noto Sans KR',sans-serif;font-weight:700" onclick="AL()">로그인</button>
+  <button class="bg" style="width:100%" onclick="S.screen=S.board.length>0?'user':'welcome';S.loginErr='';render()">돌아가기</button>
+</div></div>`;}
+
+function adminH(){
+  if(S.editPid===null&&S.pools.length>0)S.editPid=S.pools[0].id;
+  const mn=S.size*S.size;
+  const poolSel=S.pools.map(p=>{
+    const act=p.id===S.poolId,reqN=p.items.filter(i=>i.req).length,lack=p.items.length<mn;
+    return`<button onclick="SP('${p.id}')" style="text-align:left;padding:10px 14px;border:${act?'2px solid #3b6fc4':'1px solid #bfdbfe'};border-radius:8px;background:${act?'#eff6ff':'#fff'};cursor:${lack&&!act?'not-allowed':'pointer'};display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:6px;opacity:${lack&&!act?'0.55':'1'}">
+      <span style="font-weight:700;color:${act?'#3b6fc4':'#1a3a6e'}">${act?'✓ ':''}${esc(p.name)}</span>
+      <span style="font-size:11px;color:${lack?'#ef4444':'#93c5fd'}">${p.items.length}개 · 필수 ${reqN}${lack?` · 최소 ${mn}개 필요`:''}</span>
+    </button>`;
+  }).join('');
+  const poolMgr=S.pools.map(pool=>{
+    const exp=S.editPid===pool.id,reqN=pool.items.filter(i=>i.req).length;
+    const tags=pool.items.map(it=>`
+      <span class="tag">
+        <button onclick="TR('${pool.id}','${it.id}')" style="background:${it.req?'#3b6fc4':'#dbeafe'};color:${it.req?'#fff':'#93c5fd'};border:none;border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;line-height:1.5;font-weight:700;margin-right:1px">${it.req?'필수':'선택'}</button>${esc(it.label)}<button onclick="DI('${pool.id}','${it.id}')" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:14px;line-height:1;padding:0;margin-left:2px">×</button>
+      </span>`).join('');
+    return`<div style="border:1px solid #bfdbfe;border-radius:8px;margin-bottom:8px;overflow:hidden">
+      <div onclick="TP('${pool.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f0f7ff;cursor:pointer">
+        <span style="font-weight:700;font-size:14px;color:#1a3a6e">${esc(pool.name)}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:#93c5fd">${pool.items.length}개</span>
+          ${reqN>0?`<span style="font-size:11px;background:#dbeafe;color:#3b6fc4;border-radius:4px;padding:1px 6px">필수 ${reqN}</span>`:''}
+          ${S.pools.length>1?`<button onclick="event.stopPropagation();DP2('${pool.id}')" style="color:#ef4444;background:none;border:none;cursor:pointer;padding:0;font-size:14px">×</button>`:''}
+          <span style="font-size:12px;color:#93c5fd">${exp?'▲':'▼'}</span>
+        </div>
+      </div>
+      ${exp?`<div style="padding:12px 14px;border-top:1px solid #bfdbfe">
+        <p style="font-size:12px;color:#93c5fd;margin-bottom:8px">필수/선택 전환 가능 · × 버튼으로 삭제</p>
+        <div style="display:flex;gap:8px;margin-bottom:.75rem">
+          <input type="text" id="ni_${pool.id}" placeholder="새 미션 입력 후 Enter" onkeydown="if(event.key==='Enter')AI('${pool.id}')" style="flex:1;font-size:13px">
+          <button class="bp" onclick="AI('${pool.id}')">추가</button>
+        </div>
+        ${pool.items.length===0?`<p style="color:#93c5fd;font-size:12px;text-align:center;margin:.5rem 0">미션을 추가해주세요</p>`:''}
+        <div style="display:flex;flex-wrap:wrap;margin-top:4px">${tags}</div>
+      </div>`:''}
+    </div>`;
+  }).join('');
+  return`<div style="padding:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h2 style="font-size:17px;font-weight:700;color:#1a3a6e">⚙ 관리자 설정</h2>
+      <button class="bg" onclick="S.screen=S.board.length>0?'user':'welcome';render()">나가기</button>
+    </div>
+    <div class="card">
+      <p style="margin-bottom:10px;font-weight:700;font-size:13px;color:#3b6fc4">빙고판 크기</p>
+      <div style="display:flex;gap:8px">
+        <button onclick="SS(4)" style="flex:1;padding:10px;border:${S.size===4?'2px solid #3b6fc4':'1px solid #bfdbfe'};border-radius:8px;background:${S.size===4?'#eff6ff':'#fff'};font-weight:700;cursor:pointer;font-size:18px;color:${S.size===4?'#3b6fc4':'#1a3a6e'}">4×4</button>
+        <button onclick="SS(5)" style="flex:1;padding:10px;border:${S.size===5?'2px solid #3b6fc4':'1px solid #bfdbfe'};border-radius:8px;background:${S.size===5?'#eff6ff':'#fff'};font-weight:700;cursor:pointer;font-size:18px;color:${S.size===5?'#3b6fc4':'#1a3a6e'}">5×5</button>
+      </div>
+    </div>
+    <div class="card"><p style="margin-bottom:10px;font-weight:700;font-size:13px;color:#3b6fc4">활성 단어 풀</p>${poolSel}</div>
+    <div class="card">
+      <p style="margin-bottom:10px;font-weight:700;font-size:13px;color:#3b6fc4">미션 풀 관리</p>
+      <div style="display:flex;gap:8px;margin-bottom:.75rem">
+        <input type="text" id="npn" placeholder="새 풀 이름" onkeydown="if(event.key==='Enter')AP()">
+        <button class="bp" onclick="AP()">추가</button>
+      </div>${poolMgr}
+    </div>
+    <div class="card">
+      <p style="margin-bottom:10px;font-weight:700;font-size:13px;color:#3b6fc4">비밀번호 변경</p>
+      <div style="display:flex;gap:8px">
+        <input type="password" id="npw" placeholder="새 비밀번호 (4자 이상)" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')CP()">
+        <button class="bg" onclick="CP()">변경</button>
+      </div>
+      ${S.pwMsg?`<p style="margin:6px 0 0;font-size:12px;color:${S.pwMsg==='변경 완료'?'#3b6fc4':'#ef4444'}">${esc(S.pwMsg)}</p>`:''}
+    </div>
+    <button class="bp" onclick="mkBoard();S.screen='welcome';render()" style="width:100%;padding:13px;font-size:14px;border-radius:12px;font-family:'Noto Sans KR',sans-serif;font-weight:700">✓ 설정 저장</button>
+  </div>`;}
+
 function userH(){
   const bl=bgs(S.board,S.size),bs=new Set(bl.flat());
   const pc=S.board.filter(c=>c?.photo).length,tot=S.board.length;
-
-  const shareIcon=`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
-
-  const sharePopup=S.showShare?`
-    <div style="margin:0 .75rem .5rem;background:#fff;border:1.5px solid #3b6fc4;border-radius:12px;padding:12px 13px;position:relative">
+  const hasBingo=bl.length>0;
+  const z=S.zoom;
+  const fsSz=Math.round(11*z),fsPhoto=Math.round(7*z),fsDate=Math.round(6*z);
+  const cells=S.board.map((c,i)=>{
+    const bin=bs.has(i),has=!!c?.photo;
+    const cellClass=bin?'cell bingo':c?.req&&!has?'cell req-empty':'cell';
+    if(has)return`<div class="${cellClass}" onclick="PP(${i})">
+      <img src="${c.photo.dataUrl}" alt="${esc(c.label)}" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.5);padding:2px 3px">
+        <p style="margin:0;color:#fff;font-size:${fsPhoto}px;font-weight:700;font-family:'Noto Sans KR',sans-serif;text-align:center;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.label)}</p>
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);padding:1px 3px">
+        <p style="margin:0;color:#e5e7eb;font-size:${fsDate}px;text-align:center;font-family:monospace;line-height:1.4">${fmt(c.photo.date)}</p>
+      </div>
+      <button onclick="RP(event,${i})" style="position:absolute;top:2px;right:2px;width:15px;height:15px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">×</button>
+      ${bin?'<div style="position:absolute;inset:0;background:rgba(59,111,196,.15);pointer-events:none"></div>':''}
+    </div>`;
+    return`<div class="${cellClass}" onclick="PP(${i})">
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px;gap:1px">
+        ${c?.req?`<span style="font-size:${Math.round(8*z)}px;color:#3b82f6;line-height:1">★</span>`:''}
+        <p style="margin:0;font-size:${fsSz}px;font-weight:700;font-family:'Noto Sans KR',sans-serif;color:#1e3a8a;text-align:center;line-height:1.25;word-break:keep-all">${esc(c?.label||'')}</p>
+      </div>
+    </div>`;
+  }).join('');
+  const startDateTxt=S.boardStartDate?`이번 탐험은 ${fmtStart(S.boardStartDate)}에 시작했습니다`:'';
+  const btnBase=`border-radius:14px;padding:14px 8px;text-align:center;font-family:'Noto Sans KR',sans-serif;width:100%;cursor:pointer`;
+  const btnOn=`${btnBase};background:#3b6fc4;border:1.5px solid #3b6fc4`;
+  const btnOff=`${btnBase};background:#bfdbfe;border:1.5px solid #93c5fd`;
+  return`<div style="padding:.75rem">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.6rem">
+      <div>
+        <h1 style="font-size:24px;font-weight:900;color:#1a3a6e;letter-spacing:1.5px;line-height:1.25;font-family:'Gowun Dodum',serif">${esc(S.name)}님의 빙고</h1>
+        ${startDateTxt?`<p style="font-size:12px;color:#4a7cc9;margin-top:4px;letter-spacing:.5px;font-family:'Gowun Dodum',serif">${startDateTxt}</p>`:''}
+        <p style="font-size:11px;color:#5a8dd8;margin-top:2px;font-family:'Gowun Dodum',serif">${pc}/${tot} 완성 · 빙고 ${bl.length}개</p>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:8px">
+        <button onclick="S.showShare=!S.showShare;render()" style="background:none;border:1px solid #bfdbfe;border-radius:8px;padding:6px 10px;cursor:pointer;color:#4a7cc9;display:flex;align-items:center;justify-content:center">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button onclick="S.screen='diary';S.diaryFrom='user';S.diaryExpanded=3;S.diaryLoggedIn=false;render()" style="background:none;border:1px solid #bfdbfe;border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4a7cc9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+    ${S.showShare?`
+    <div style="background:#fff;border:1.5px solid #3b6fc4;border-radius:12px;padding:12px 13px;margin-bottom:8px;position:relative">
       <div style="position:absolute;top:-7px;right:44px;width:12px;height:12px;background:#fff;border-left:1.5px solid #3b6fc4;border-top:1.5px solid #3b6fc4;transform:rotate(45deg)"></div>
       <div style="font-size:12px;font-weight:700;color:#1a3a6e;margin-bottom:2px">🗺️ 탐험 소개하기</div>
       <div style="font-size:10px;color:#8aa4c0;margin-bottom:8px">링크를 복사해 카톡이나 문자로 공유해요</div>
       <div style="display:flex;gap:6px;align-items:center">
-        <div style="flex:1;background:#eaf2fb;border-radius:6px;padding:6px 8px;font-size:10px;color:#3b6fc4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="share-url-display">${esc(window.location.href)}</div>
+        <div style="flex:1;background:#eaf2fb;border-radius:6px;padding:6px 8px;font-size:10px;color:#3b6fc4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(typeof window!=='undefined'?window.location.href:'')}</div>
         <button onclick="copyShareLink()" style="background:#3b6fc4;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">링크 복사</button>
       </div>
       <div id="cp-toast" style="font-size:10px;color:#4caf50;text-align:center;margin-top:7px;opacity:0;transition:opacity 0.3s;font-weight:500">✓ 링크가 복사됐어요!</div>
-    </div>`:'';
-
-  const cells=S.board.map((c,i)=>{
-    const bin=bs.has(i),has=!!c?.photo;
-    if(has)return`<div class="cell${bin?' bingo':''}" onclick="PP(${i})">
-      <img src="${c.photo.dataUrl}" alt="${esc(c.label)}" style="width:100%;height:100%;object-fit:cover;display:block">
-      <div style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.46);padding:2px 4px"><p style="margin:0;color:#fff;font-size:7px;text-align:center;font-weight:500;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.label)}</p></div>
-      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.46);padding:2px 4px"><p style="margin:0;color:#fff;font-size:6px;text-align:center;font-family:monospace;line-height:1.4">${fmt(c.photo.date)}</p></div>
-      <button onclick="RP(event,${i})" style="position:absolute;top:2px;right:2px;width:15px;height:15px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">×</button>
-      ${bin?'<div style="position:absolute;inset:0;background:rgba(59,111,196,.15);pointer-events:none"></div>':''}
-    </div>`;
-    return`<div class="cell${bin?' bingo':''}" onclick="PP(${i})" style="${c?.req?'background:rgba(59,111,196,.06)':''}">
-      <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px;gap:2px">
-        ${c?.req?'<span style="font-size:9px;color:#3b6fc4">★</span>':''}
-        <p style="margin:0;font-size:8px;color:${c?.req?'#1a3a6e':'#9ca3af'};text-align:center;line-height:1.3;word-break:keep-all">${esc(c?.label||'')}</p>
-      </div>
-    </div>`;
-  }).join('');
-
-  const endActive=bl.length>0;
-  const newActive=S.boardSent;
-
-  const endPopup=S.showEndPopup?`
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:1.5rem">
-      <div style="background:#fff;border-radius:14px;padding:1.5rem;max-width:300px;width:100%;text-align:center">
-        <p style="font-size:16px;font-weight:500;margin-bottom:.5rem;color:#1a3a6e">이번 탐험은 여기서<br>완료할까요?</p>
-        <p style="font-size:12px;color:#6b7280;margin-bottom:1.25rem;line-height:1.7">아직 빙고가 완성되지 않았어요.<br>저장하고 종료하거나 계속 탐험할 수 있어요.</p>
-        <div style="display:flex;gap:8px">
-          <button onclick="S.showEndPopup=false;render()" style="flex:1;background:#eaf2fb;color:#3b6fc4;border:none;border-radius:8px;padding:11px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">계속 탐험하기</button>
-          <button onclick="S.showEndPopup=false;doShare(false)" style="flex:1;background:#3b6fc4;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">저장하고 종료</button>
-        </div>
-      </div>
-    </div>`:'';
-
-  return`<div style="padding:.75rem">
-    ${endPopup}
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
-      <div>
-        <h1 style="font-size:16px;font-weight:500;color:#1a3a6e">${esc(S.name)}님의 빙고</h1>
-        <p style="font-size:11px;color:#3b6fc4">${pc}/${tot} 완성 · 빙고 ${bl.length}개</p>
-      </div>
-      <div style="display:flex;gap:5px;align-items:center">
-        ${pc>0&&!S.boardSent?`<button onclick="dlMid()" ${S.dlding?'disabled':''} class="bp" style="font-size:12px;padding:6px 11px;opacity:${S.dlding?'0.7':'1'}">${S.dlding?'저장 중...':'저장'}</button>`:''}
-        <button onclick="S.showShare=!S.showShare;render()" style="background:#fff;border:1px solid #dde8f5;border-radius:8px;padding:6px 10px;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center">${shareIcon}</button>
-        <button onclick="S.screen='diary';S.diaryFrom='user';S.diaryExpanded=3;S.diaryLoggedIn=false;render()" style="background:#fff;border:1px solid #dde8f5;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#9ca3af">⚙</button>
-      </div>
+    </div>`:''}
+    ${hasBingo?`<div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:8px 14px;margin-bottom:.6rem;text-align:center">
+      <span style="font-weight:700;color:#1e40af;font-size:13px;letter-spacing:.5px;font-family:'Noto Sans KR',sans-serif">🎉 ${bl.length}빙고 달성!</span>
+    </div>`:''}
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:6px">
+      <span style="font-size:11px;color:#93c5fd;font-family:'Gowun Dodum',serif">확대</span>
+      <button onclick="SZ(${Math.max(.7,z-.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+      <button onclick="SZ(${Math.min(2,z+.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
     </div>
-    ${sharePopup}
-    ${bl.length>0&&!S.boardSent?`<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:7px 14px;margin-bottom:.65rem;text-align:center"><span style="font-weight:500;color:#854d0e;font-size:13px">🎉 ${bl.length}빙고 달성!</span></div>`:''}
-    <div class="board" style="grid-template-columns:repeat(${S.size},1fr)">${cells}</div>
-    <div style="display:flex;gap:7px;margin-top:10px">
-      <button onclick="handleEndBingo()" ${S.dlding?'disabled':''}
-        style="flex:2;background:${endActive?'#3b6fc4':'#eaf2fb'};color:${endActive?'#fff':'#93b4d8'};border:none;border-radius:10px;padding:11px 8px;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;opacity:${S.dlding?'0.7':'1'}">
-        <span style="font-size:13px;font-weight:500">${S.dlding?'처리 중...':'탐험 종료하기'}</span>
-        <span style="font-size:10px;opacity:0.75;font-weight:400">빙고 사진을 저장합니다</span>
+    <div style="overflow:auto">
+      <div class="board" id="bboard" style="grid-template-columns:repeat(${S.size},1fr);transform:scale(${z});transform-origin:top left;width:${z===1?'100%':Math.round(100/z)+'%'}">${cells}</div>
+    </div>
+    <div style="height:${z>1?Math.round((z-1)*300)+'px':'0'}"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <button onclick="onEnd()" ${S.dlding?'disabled':''} style="${hasBingo?btnOn:btnOff};opacity:${S.dlding?.7:1}">
+        <span style="display:block;font-size:13px;font-weight:800;margin-bottom:4px;white-space:nowrap;color:${hasBingo?'#fff':'#1e3a8a'}">탐험 종료하기</span>
+        <span style="display:block;font-size:10px;font-weight:400;color:${hasBingo?'rgba(255,255,255,.85)':'#4a7cc9'}">빙고 사진을 저장합니다</span>
       </button>
-      <button onclick="${newActive?'newBoard()':''}"
-        style="flex:1;background:${newActive?'#3b6fc4':'#eaf2fb'};color:${newActive?'#fff':'#93b4d8'};border:none;border-radius:10px;padding:11px 8px;cursor:${newActive?'pointer':'default'};font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px">
-        <span style="font-size:12px;font-weight:500">새로운 탐험 시작하기</span>
-        <span style="font-size:10px;opacity:0.75;font-weight:400">새로운 세계가 열릴 거에요</span>
+      <button onclick="${S.boardSent?'NB()':''}" style="${S.boardSent?btnOn:btnOff};${!S.boardSent?'opacity:.55':''}">
+        <span style="display:block;font-size:13px;font-weight:800;margin-bottom:4px;white-space:nowrap;color:${S.boardSent?'#fff':'#1e3a8a'}">새로운 탐험 시작하기</span>
+        <span style="display:block;font-size:10px;font-weight:400;color:${S.boardSent?'rgba(255,255,255,.85)':'#4a7cc9'}">새로운 세계가 열릴 거예요</span>
       </button>
     </div>
+    ${!S.boardSent?`<p style="font-size:11px;color:#93c5fd;text-align:center;margin-top:7px;font-family:'Gowun Dodum',serif">탐험을 먼저 종료해야 새로운 빙고를 시작할 수 있어요</p>`:''}
   </div>`;}
 
-/* ── Actions ── */
+function onEnd(){const bl=bgs(S.board,S.size);if(bl.length>0){SD();}else{showPopup();}}
+function SZ(z){S.zoom=parseFloat(z);render();}
 function startBingo(){
   const v=document.getElementById('uname')?.value?.trim();
   if(!v){document.getElementById('uname')?.focus();return;}
-  S.name=v;sc();mkBoard();S.screen='user';render();
+  S.name=v;sc();
+  if(!mkBoard()){
+    const err=document.getElementById('start-err');
+    if(err)err.textContent='미션이 부족해요. 관리자 모드에서 미션을 추가해주세요.';
+    return;
+  }
+  S.screen='user';render();
 }
-function newBoard(){S.board=[];S.boardSent=false;sbrd();S.screen='welcome';render();}
+function NB(){S.board=[];S.boardSent=false;S.boardStartDate=null;sbrd();S.screen='welcome';render();}
 function AL(){const v=document.getElementById('lpw')?.value||'';if(v===S.pw){S.screen='admin';S.loginErr='';S.pwMsg='';render();}else{S.loginErr='비밀번호가 틀렸습니다.';render();}}
 function SS(sz){S.size=sz;sc();render();}
 function SP(pid){const pool=S.pools.find(p=>p.id===pid);if(!pool||pool.items.length<S.size*S.size)return;S.poolId=pid;sc();render();}
@@ -579,29 +567,19 @@ function TR(pid,iid){const pool=S.pools.find(p=>p.id===pid);if(!pool)return;cons
 function CP(){const v=document.getElementById('npw')?.value?.trim();if(!v||v.length<4){S.pwMsg='4자 이상 입력해주세요';render();return;}S.pw=v;sc();S.pwMsg='변경 완료';render();}
 function PP(i){S.selCell=i;document.getElementById('fi').click();}
 function RP(ev,i){ev.stopPropagation();S.board[i].photo=null;sbrd();render();}
+async function SD(){S.dlding=true;render();await doSave();S.dlding=false;render();}
 
-/* ── Init ── */
 (function(){
   const cfg=lg(KC),brd=lg(KB);
-  if(cfg){
-    if(cfg.pools)S.pools=cfg.pools;
-    if(cfg.poolId)S.poolId=cfg.poolId;
-    if(cfg.size)S.size=cfg.size;
-    if(cfg.pw)S.pw=cfg.pw;
-    if(cfg.name)S.name=cfg.name;
-  }
-  if(brd){
-    if(brd.board&&brd.board.length>0)S.board=brd.board;
-    if(brd.boardSent!==undefined)S.boardSent=brd.boardSent;
-  }
-  S.diary=loadDiary();
-  if(S.board.length>0&&!S.boardSent)S.screen='user';
-  else S.screen='welcome';
+  if(cfg){if(cfg.pools)S.pools=cfg.pools;if(cfg.poolId)S.poolId=cfg.poolId;if(cfg.size)S.size=cfg.size;if(cfg.pw)S.pw=cfg.pw;if(cfg.name)S.name=cfg.name;if(cfg.recentIds)S.recentIds=cfg.recentIds;}
+  if(brd){if(brd.board&&brd.board.length>0)S.board=brd.board;if(brd.boardSent!==undefined)S.boardSent=brd.boardSent;if(brd.boardStartDate)S.boardStartDate=brd.boardStartDate;}
+  if(S.board.length>0&&!S.boardSent)S.screen='user';else S.screen='welcome';
   document.getElementById('fi').addEventListener('change',async function(ev){
     const f=ev.target.files?.[0];if(!f||S.selCell===null)return;
     const dataUrl=await cimg(f);S.board[S.selCell].photo={dataUrl,date:new Date().toISOString()};
     sbrd();ev.target.value='';S.selCell=null;render();
   });
+  S.diary=loadDiary();
   render();
 })();
 </script>
