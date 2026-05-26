@@ -38,6 +38,8 @@ button{font-family:'Gowun Dodum',serif}
 <body>
 <div id="app"></div>
 <div id="popup" style="display:none"></div>
+<div id="storage-warn" style="display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:10px 18px;border-radius:10px;font-size:12px;font-family:'Noto Sans KR',sans-serif;z-index:9999;text-align:center;max-width:300px;line-height:1.5">⚠️ 저장 공간이 부족해요.<br>사진을 줄이거나 이미지 저장 후 새 빙고를 시작해주세요.</div>
+<div id="save-toast" style="display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1a3a6e;color:#fff;padding:10px 20px;border-radius:10px;font-size:12px;font-family:'Noto Sans KR',sans-serif;z-index:9999;white-space:nowrap">✓ 저장됐어요!</div>
 <input type="file" id="fi" accept="image/*" style="display:none">
 <script>
 const KC='bingo_cfg_v10',KB='bingo_brd_v10',KD='bingo_diary_v1';
@@ -165,24 +167,77 @@ let S={
   diary:null,
 };
 
+// ── localStorage (설정·일지용 텍스트만) ──────────────────────────
 function lg(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch{return null;}}
 function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 function sc(){ls(KC,{pools:S.pools,poolId:S.poolId,size:S.size,pw:S.pw,name:S.name,recentIds:S.recentIds});}
-function sbrd(){ls(KB,{board:S.board,boardSent:S.boardSent,boardStartDate:S.boardStartDate});}
-function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
-function fmt(iso){const d=new Date(iso),p=n=>('0'+n).slice(-2);return`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
-function fmtStart(iso){const d=new Date(iso);return`${d.getMonth()+1}월 ${d.getDate()}일`;}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-async function cimg(file,mx=500){return new Promise(r=>{
+// ── IndexedDB (보드 사진 포함 대용량 저장) ────────────────────────
+let _db=null;
+function openDB(){
+  if(_db)return Promise.resolve(_db);
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('bingo_db',1);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('store'))db.createObjectStore('store');
+    };
+    req.onsuccess=e=>{_db=e.target.result;res(_db);};
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function idbGet(k){
+  const db=await openDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction('store','readonly');
+    const req=tx.objectStore('store').get(k);
+    req.onsuccess=()=>res(req.result??null);
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function idbSet(k,v){
+  const db=await openDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction('store','readwrite');
+    tx.objectStore('store').put(v,k);
+    tx.oncomplete=()=>res();
+    tx.onerror=()=>rej(tx.error);
+  });
+}
+async function sbrd(){
+  try{
+    await idbSet(KB,{board:S.board,boardSent:S.boardSent,boardStartDate:S.boardStartDate});
+  }catch(e){
+    // IndexedDB 실패 시 localStorage로 폴백
+    try{
+      ls(KB,{board:S.board,boardSent:S.boardSent,boardStartDate:S.boardStartDate});
+    }catch(e2){
+      // 둘 다 실패할 때만 경고
+      showStorageWarn();
+    }
+  }
+}
+function showStorageWarn(){
+  const w=document.getElementById('storage-warn');
+  if(w){w.style.display='block';setTimeout(()=>w.style.display='none',4000);}
+}
+
+// ── 이미지 압축 (더 작게) ──────────────────────────────────────────
+async function cimg(file,mx=400){return new Promise(r=>{
   const img=new Image(),u=URL.createObjectURL(file);
   img.onload=()=>{
     let{width:w,height:h}=img;
     if(w>mx||h>mx){if(w>=h){h=Math.round(h*mx/w);w=mx;}else{w=Math.round(w*mx/h);h=mx;}}
     const c=document.createElement('canvas');c.width=w;c.height=h;
-    c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.72));
+    c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.60));
   };img.src=u;
 });}
+
+// ── 유틸 ──────────────────────────────────────────────────────────
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
+function fmt(iso){const d=new Date(iso),p=n=>('0'+n).slice(-2);return`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function fmtStart(iso){const d=new Date(iso);return`${d.getMonth()+1}월 ${d.getDate()}일`;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function bgs(board,sz){
   const ok=i=>!!board[i]?.photo,r=[];
@@ -519,10 +574,13 @@ function userH(){
     ${hasBingo?`<div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:8px 14px;margin-bottom:.6rem;text-align:center">
       <span style="font-weight:700;color:#1e40af;font-size:13px;letter-spacing:.5px;font-family:'Noto Sans KR',sans-serif">🎉 ${bl.length}빙고 달성!</span>
     </div>`:''}
-    <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:6px">
-      <span style="font-size:11px;color:#93c5fd;font-family:'Gowun Dodum',serif">확대</span>
-      <button onclick="SZ(${Math.max(.7,z-.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
-      <button onclick="SZ(${Math.min(2,z+.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <button onclick="manualSave()" style="background:#3b6fc4;border:none;border-radius:8px;padding:6px 14px;font-size:11px;color:#fff;font-family:'Noto Sans KR',sans-serif;font-weight:700;cursor:pointer">임시 저장</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:#93c5fd;font-family:'Gowun Dodum',serif">확대</span>
+        <button onclick="SZ(${Math.max(.7,z-.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+        <button onclick="SZ(${Math.min(2,z+.15).toFixed(2)})" style="width:28px;height:28px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:17px;cursor:pointer;color:#3b6fc4;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+      </div>
     </div>
     <div style="overflow:auto">
       <div class="board" id="bboard" style="grid-template-columns:repeat(${S.size},1fr);transform:scale(${z});transform-origin:top left;width:${z===1?'100%':Math.round(100/z)+'%'}">${cells}</div>
@@ -567,17 +625,22 @@ function TR(pid,iid){const pool=S.pools.find(p=>p.id===pid);if(!pool)return;cons
 function CP(){const v=document.getElementById('npw')?.value?.trim();if(!v||v.length<4){S.pwMsg='4자 이상 입력해주세요';render();return;}S.pw=v;sc();S.pwMsg='변경 완료';render();}
 function PP(i){S.selCell=i;document.getElementById('fi').click();}
 function RP(ev,i){ev.stopPropagation();S.board[i].photo=null;sbrd();render();}
+async function manualSave(){
+  await sbrd();
+  const t=document.getElementById('save-toast');
+  if(t){t.style.display='block';setTimeout(()=>t.style.display='none',2200);}
+}
 async function SD(){S.dlding=true;render();await doSave();S.dlding=false;render();}
 
-(function(){
-  const cfg=lg(KC),brd=lg(KB);
+(async function(){
+  const cfg=lg(KC),brd=await idbGet(KB).catch(()=>lg(KB));
   if(cfg){if(cfg.pools)S.pools=cfg.pools;if(cfg.poolId)S.poolId=cfg.poolId;if(cfg.size)S.size=cfg.size;if(cfg.pw)S.pw=cfg.pw;if(cfg.name)S.name=cfg.name;if(cfg.recentIds)S.recentIds=cfg.recentIds;}
   if(brd){if(brd.board&&brd.board.length>0)S.board=brd.board;if(brd.boardSent!==undefined)S.boardSent=brd.boardSent;if(brd.boardStartDate)S.boardStartDate=brd.boardStartDate;}
   if(S.board.length>0&&!S.boardSent)S.screen='user';else S.screen='welcome';
   document.getElementById('fi').addEventListener('change',async function(ev){
     const f=ev.target.files?.[0];if(!f||S.selCell===null)return;
     const dataUrl=await cimg(f);S.board[S.selCell].photo={dataUrl,date:new Date().toISOString()};
-    sbrd();ev.target.value='';S.selCell=null;render();
+    await sbrd();ev.target.value='';S.selCell=null;render();
   });
   S.diary=loadDiary();
   render();
